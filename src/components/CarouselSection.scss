@@ -1,0 +1,124 @@
+@import '../../node_modules/slick-carousel/slick/slick.css';
+@import '../../node_modules/slick-carousel/slick/slick-theme.css';
+
+.carousel-section {
+  width: 100%;
+  padding: 4px 0 32px 60px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+
+  .carousel-title {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    letter-spacing: 1px;
+    text-align: left;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    width: 100%;
+    margin-left: 18px;
+  }
+
+  .carousel-slider {
+    width: 92vw;
+    max-width: 1200px;
+    margin-left: 18px;
+    
+    .slick-arrow {
+      display: none !important;
+    }
+    
+    .slick-list {
+      overflow: hidden;
+    }
+    
+    .slick-track {
+      // Let Slick handle the display and transform naturally
+      display: block;
+    }
+    
+    .slick-slide {
+      outline: none;
+      padding: 0 8px; // Use padding for spacing
+      box-sizing: border-box;
+      
+      &:first-child {
+        padding-left: 0;
+      }
+      
+      &:last-child {
+        padding-right: 0;
+      }
+    }
+    
+    .carousel-card {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  }
+
+    .carousel-video-wrapper {
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 28px rgba(0,0,0,0.22);
+    transition: transform 0.28s cubic-bezier(0.23,1,0.32,1), box-shadow 0.2s;
+    background: #000;
+    &.hovered {
+      transform: scale(1.10);
+      box-shadow: 0 12px 40px rgba(224,43,43,0.24);
+      z-index: 2;
+    }
+  }
+  .carousel-video {
+    width: 100%;
+    height: 175px;
+    object-fit: cover;
+    display: block;
+    background: #222;
+  }
+  .carousel-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.48);
+    color: #fff;
+    font-size: 1.07rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 10px 0 8px 0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.13);
+    text-transform: uppercase;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .carousel-section .carousel-slider {
+    max-width: 98vw;
+  }
+  .carousel-section .carousel-video {
+    height: 120px;
+  }
+}
+@media (max-width: 600px) {
+  .carousel-section {
+    padding: 38px 0 22px 0;
+    .carousel-title {
+      font-size: 1.2rem;
+      margin-bottom: 11px;
+    }
+    .carousel-slider {
+      max-width: 99vw;
+    }
+    .carousel-video {
+      height: 140px;
+    }
+  }
+}

@@ -1,0 +1,260 @@
+// Edit Design Loading Screen Styles
+.edit-design-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #f5f5f5;
+  z-index: 2000;
+  display: grid;
+  grid-template-rows: auto 1fr; // navbar, content (includes carousel)
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+
+  &.fade-in {
+    opacity: 1;
+  }
+
+  &.fade-out {
+    opacity: 0;
+  }
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px; // Reduced gap to bring carousel closer to heading
+  width: 100%;
+  max-width: 1200px;
+  padding: 24px 20px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+// Main Title
+.loading-title {
+  font-size: 48px;
+  font-weight: bold;
+  color: #000;
+  margin: 0;
+  letter-spacing: 3px;
+  text-align: center;
+  
+  @media (max-width: 768px) {
+    font-size: 36px;
+    letter-spacing: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 28px;
+    letter-spacing: 1px;
+  }
+}
+
+// Loading Section (Spinner + Text)
+.loading-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+// Loading Spinner
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  svg {
+    animation: spin 1s linear infinite;
+    
+    circle {
+      animation: dash 2s ease-in-out infinite;
+    }
+  }
+}
+
+// Loading Text
+.loading-text {
+  font-size: 18px;
+  color: #666;
+  font-style: italic;
+  font-weight: 400;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+// Shoe Carousel
+.shoe-carousel {
+  width: 100%;
+  height: 280px; // Extra large height for bigger shoes
+  overflow: hidden;
+  position: relative;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  gap: 0;
+} 
+
+.shoe-item {
+  position: relative;
+  top: 0;
+  transform: none;
+  opacity: 1;
+  transition: opacity 0.3s ease-in-out;
+  margin: 0 10px;
+  
+  &.hidden {
+    opacity: 0;
+  }
+}
+
+.shoe-silhouette {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+  }
+  
+  .shoe-body {
+    transition: fill 0.3s ease;
+  }
+  
+  .shoe-sole {
+    opacity: 0.9;
+  }
+  
+  .shoe-fill {
+    transition: height 0.2s ease-out;
+  }
+}
+
+// Percentage Overlay
+.percentage-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: bold;
+  font-size: 28px; // Much bigger font for extra large shoes
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  z-index: 10;
+  
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 20px;
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .loading-content {
+    gap: 30px;
+  }
+  
+  .carousel-section {
+    padding: 30px 15px;
+  }
+  
+  .shoe-carousel {
+    height: 220px;
+  }
+  
+  .carousel-container {
+    width: 900px;
+  }
+  
+  .shoe-silhouette svg {
+    width: 180px;
+    height: 115px;
+  }
+}
+
+@media (max-width: 480px) {
+  .loading-content {
+    gap: 25px;
+    padding: 0 15px;
+  }
+  
+  .carousel-section {
+    padding: 25px 10px;
+  }
+  
+  .shoe-carousel {
+    height: 180px;
+  }
+  
+  .carousel-container {
+    width: 700px;
+  }
+  
+  .shoe-silhouette svg {
+    width: 140px;
+    height: 90px;
+  }
+}
+
+// Accessibility
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner svg {
+    animation: none;
+  }
+  
+  .shoe-item {
+    transition: none;
+  }
+  
+  .shoe-fill {
+    transition: none;
+  }
+}
+
+// Loading state indicator for screen readers
+.edit-design-loading[aria-label] {
+  position: relative;
+}

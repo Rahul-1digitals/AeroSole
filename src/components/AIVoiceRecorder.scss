@@ -1,0 +1,247 @@
+.ai-voice-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: opacity 1s ease-out;
+  
+  &.fade-out {
+    opacity: 0;
+  }
+}
+
+.ai-voice-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.ai-voice-close {
+  position: absolute;
+  top: 30px;
+  right: 40px;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 300;
+  cursor: pointer;
+  z-index: 10001;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: #e02b2b;
+  }
+}
+
+.ai-voice-content {
+  position: relative;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ai-recorder-container {
+  position: relative;
+  margin-bottom: 40px;
+}
+
+.ai-recorder-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 3px solid #333;
+  transition: all 0.3s ease;
+  
+  &.recording {
+    animation: pulse 2s infinite;
+  }
+}
+
+.ai-logo {
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 900;
+  font-family: 'Arial', sans-serif;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.soundwave {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 3px;
+  
+  &.soundwave-left {
+    right: 140px;
+  }
+  
+  &.soundwave-right {
+    left: 140px;
+  }
+}
+
+.wave {
+  width: 4px;
+  background: linear-gradient(45deg, #e02b2b, #ff6b6b, #ff8e8e);
+  border-radius: 2px;
+  animation: wave-animation 1.5s infinite ease-in-out;
+  
+  &.wave-1 {
+    height: 20px;
+    animation-delay: 0s;
+  }
+  
+  &.wave-2 {
+    height: 35px;
+    animation-delay: 0.1s;
+  }
+  
+  &.wave-3 {
+    height: 25px;
+    animation-delay: 0.2s;
+  }
+  
+  &.wave-4 {
+    height: 15px;
+    animation-delay: 0.3s;
+  }
+}
+
+.ai-text-container {
+  max-width: 600px;
+  padding: 0 20px;
+}
+
+.ai-transcribed-text {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  min-height: 2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.typing-cursor {
+  animation: blink 1s infinite;
+  margin-left: 2px;
+  font-weight: 300;
+}
+
+// Animations
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(224, 43, 43, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 20px rgba(224, 43, 43, 0);
+  }
+}
+
+@keyframes wave-animation {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.8);
+  }
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .ai-voice-close {
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+  }
+  
+  .ai-recorder-circle {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .ai-logo {
+    font-size: 2rem;
+  }
+  
+  .soundwave {
+    &.soundwave-left {
+      right: 120px;
+    }
+    
+    &.soundwave-right {
+      left: 120px;
+    }
+  }
+  
+  .ai-transcribed-text {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .soundwave {
+    &.soundwave-left {
+      right: 110px;
+    }
+    
+    &.soundwave-right {
+      left: 110px;
+    }
+  }
+  
+  .wave {
+    width: 3px;
+    
+    &.wave-1 {
+      height: 15px;
+    }
+    
+    &.wave-2 {
+      height: 25px;
+    }
+    
+    &.wave-3 {
+      height: 20px;
+    }
+    
+    &.wave-4 {
+      height: 12px;
+    }
+  }
+}
