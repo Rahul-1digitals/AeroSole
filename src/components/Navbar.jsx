@@ -1,11 +1,18 @@
 import React from 'react';
 import { FaSearch, FaUser, FaShoppingBag } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import './Navbar.scss';
 
 const Navbar = () => {
+  const navigate = useNavigate();
+
+  const handleLogoClick = () => {
+    navigate('/');
+  };
+
   return (
     <nav className="navbar">
-      <div className="navbar__logo">
+      <div className="navbar__logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
         {/* Replace with actual logo image if available */}
         <span className="navbar__brand">AeroSole</span>
       </div>

@@ -11,13 +11,20 @@ const ShoeDesignPage = () => {
   const [variationStrength, setVariationStrength] = useState(50);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showLeopardVariants, setShowLeopardVariants] = useState(false);
 
-  const designs = [
-    { id: 1, name: 'DESIGN 1', image: '/images/design1.png', price: '$70' },
-    { id: 2, name: 'DESIGN 2', image: '/images/design2.png', price: '$70' },
-    { id: 3, name: 'DESIGN 3', image: '/images/design3.png', price: '$70' },
-    { id: 4, name: 'DESIGN 4', image: '/images/design4.png', price: '$70' }
+  const baseDesigns = [
+    { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
+    { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
+    { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
+    { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
   ];
+
+  // Get current designs based on leopard variant state
+  const designs = baseDesigns.map(design => ({
+    ...design,
+    image: showLeopardVariants ? design.leopardImage : design.image
+  }));
 
   const handleDesignSelect = (designId) => {
     setSelectedDesign(designId);
@@ -36,6 +43,8 @@ const ShoeDesignPage = () => {
 
   const handleGenerate = () => {
     console.log('Generating design with:', { selectedDesign, variationStrength, uploadedImage });
+    // Toggle between regular and leopard variants
+    setShowLeopardVariants(!showLeopardVariants);
   };
 
   const handlePrevSlide = () => {
