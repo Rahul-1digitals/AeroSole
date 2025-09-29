@@ -43,7 +43,7 @@ const HeroSection = ({ onShowCustomResult }) => {
               left: '0', 
               width: '100%', 
               height: '100%', 
-              background: 'linear-gradient(to top right, transparent 45%, currentColor 47%, currentColor 53%, transparent 55%)',
+              background: 'linear-gradient(to bottom right, transparent 45%, currentColor 47%, currentColor 53%, transparent 55%)',
               pointerEvents: 'none'
             }}></span>
           </span>MAKE?
