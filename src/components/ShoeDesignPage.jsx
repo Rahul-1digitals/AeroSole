@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import { FaFilter, FaPalette, FaGem, FaRedo, FaUpload, FaMicrophone } from 'react-icons/fa';
@@ -11,7 +11,11 @@ const ShoeDesignPage = () => {
   const [variationStrength, setVariationStrength] = useState(50);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [showLeopardVariants, setShowLeopardVariants] = useState(false);
+  const [showLeopardVariants, setShowLeopardVariants] = useState(() => {
+    // Initialize from sessionStorage to persist across navigation
+    const saved = sessionStorage.getItem('showLeopardVariants');
+    return saved ? JSON.parse(saved) : false;
+  });
 
   const baseDesigns = [
     { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
@@ -19,6 +23,11 @@ const ShoeDesignPage = () => {
     { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
     { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
   ];
+
+  // Save state to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem('showLeopardVariants', JSON.stringify(showLeopardVariants));
+  }, [showLeopardVariants]);
 
   // Get current designs based on leopard variant state
   const designs = baseDesigns.map(design => ({
@@ -45,6 +54,12 @@ const ShoeDesignPage = () => {
     console.log('Generating design with:', { selectedDesign, variationStrength, uploadedImage });
     // Toggle between regular and leopard variants
     setShowLeopardVariants(!showLeopardVariants);
+  };
+
+  const handleReset = () => {
+    // Reset to original designs
+    setShowLeopardVariants(false);
+    console.log('Reset to original designs');
   };
 
   const handlePrevSlide = () => {
@@ -126,18 +141,19 @@ const ShoeDesignPage = () => {
                           className="shop-btn"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const key = `design${design.id}`;
+                            const baseKey = `design${design.id}`;
+                            const key = showLeopardVariants ? `${baseKey}_lepoard` : baseKey;
                             const item = {
                               id: key,
                               title: 'OLD SKOOL',
-                              build: 'Leopard pop brown / true white',
+                              build: showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white',
                               price: design.price,
                               images: [
-                                `/images/${key}/${key}_item1.png`,
-                                `/images/${key}/${key}_item2.png`,
-                                `/images/${key}/${key}_item3.png`,
+                                `/images/${baseKey}/${key}_item1.png`,
+                                `/images/${baseKey}/${key}_item2.png`,
+                                `/images/${baseKey}/${key}_item3.png`,
                               ],
-                              video: `/videos/${key}/${key}_video.mp4`,
+                              video: `/videos/${baseKey}/${key}_video.mp4`,
                               sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
                             };
                             navigate(`/product/${key}`, { state: { item } });
@@ -209,6 +225,10 @@ const ShoeDesignPage = () => {
               <button className="action-btn" title="Materials">
                 <FaGem />
                 <span>materials</span>
+              </button>
+              <button className="action-btn" title="Reset to Original" onClick={handleReset}>
+                <FaRedo />
+                <span>reset</span>
               </button>
             </div>
           </div>
