@@ -85,7 +85,7 @@ const EditDesignLoading = ({ isVisible, onComplete }) => {
               />
             </svg>
           </div>
-          <span className="loading-text">editing the design</span>
+          <span className="loading-text">Generating Designs</span>
         </div>
 
         {/* Shoe Carousel - Inside main content, under "editing the design" */}

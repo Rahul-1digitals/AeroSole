@@ -1,0 +1,678 @@
+// Shoe Design Page Styles
+.shoe-design-page {
+  height: 100vh;
+  max-height: 100vh;
+  background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Prevent scrolling
+}
+
+.design-main-content {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: auto; // Let flex handle the height
+  min-height: 0; // Allow shrinking
+}
+
+// Style Selector
+.style-selector {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 30px;
+  padding: 8px 12px;
+  gap: 6px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .style-label {
+    font-weight: bold;
+    font-size: 12px;
+    color: #333;
+    white-space: nowrap;
+  }
+  
+  .style-dropdown {
+    background: transparent;
+    border: none;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+    appearance: none;
+    padding-right: 16px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right center;
+    background-size: 14px;
+    
+    &:focus {
+      outline: none;
+    }
+    
+    &:hover {
+      color: #555;
+    }
+  }
+}
+
+// Main Heading
+.main-heading {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #333;
+  margin: 0;
+  z-index: 10;
+  
+  @media (max-width: 768px) {
+    font-size: 22px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 18px;
+  }
+}
+
+// Top Links
+.top-links {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  display: flex;
+  border: 2px solid #ddd;
+  border-radius: 30px;
+  overflow: hidden;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  .link-btn {
+    padding: 0px 16px;
+    border: none;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    flex: 1;
+    
+    &:first-child {
+      background: white;
+      color: #333;
+      
+      &:hover {
+        background: #f5f5f5;
+      }
+    }
+    
+    &:last-child {
+      background: #333;
+      color: white;
+      
+      &:hover {
+        background: #555;
+      }
+    }
+  }
+}
+
+// Carousel Section - Two items per view
+.carousel-sections {
+  position: relative;
+  height: 380px; // Reduced height to fit viewport
+  margin-top: 60px; // Reduced margin
+  margin-bottom: 20px;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    height: 320px;
+    margin-top: 50px;
+  }
+  
+  @media (max-width: 480px) {
+    height: 280px;
+    margin-top: 45px;
+  }
+}
+
+.carousel-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.5s ease-in-out;
+  width: 100%;
+}
+
+.carousel-group {
+  flex: 0 0 100%;
+  height: 100%;
+  display: flex;
+  gap: 40px;
+  padding: 0 20px;
+  
+  @media (max-width: 768px) {
+    gap: 30px;
+    padding: 0 15px;
+  }
+  
+  @media (max-width: 480px) {
+    gap: 20px;
+    padding: 0 10px;
+  }
+}
+
+.carousel-slide {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  background: transparent;
+  
+  &.active {
+    // Optional: Add active state styling if needed
+  }
+  
+  // Vertical line between text and image
+  &::after {
+    content: '';
+    position: absolute;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: 2px;
+    height: 45px;
+    background: #ddd;
+    z-index: 1;
+  }
+  
+  .design-info {
+    text-align: center;
+    margin-bottom: 20px;
+    z-index: 2;
+    position: relative;
+    
+    h3 {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    .shop-btn {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.3s ease;
+      
+      &:hover {
+        background: #dd3333;
+      }
+    }
+  }
+  
+  .shoe-image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    position: relative;
+    width: 100%;
+    
+    img {
+      max-width: 90%;
+      max-height: 200px; // Adjusted size for two items
+      object-fit: contain;
+      filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
+      
+      @media (max-width: 768px) {
+        max-height: 160px;
+      }
+      
+      @media (max-width: 480px) {
+        max-height: 140px;
+      }
+    }
+  }
+}
+
+.carousel-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: white;
+  border: 2px solid #ddd;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    background: #f5f5f5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &.prev {
+    left: 10px;
+  }
+  
+  &.next {
+    right: 10px;
+  }
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    color: #333;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    &:hover {
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+
+// Footer Controls Bar - Made more compact
+.footer-controls-bar {
+  background: white;
+  border-radius: 0px;
+  padding: 20px;
+  margin: 0px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  max-height: 130px; // Reduced height
+  max-width: 1200px;
+  width: 95%;
+  flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    padding: 4px;
+    gap: 4px;
+    max-height: 120px;
+    width: 98%;
+  }
+}
+
+.footer-top-row{
+  display: flex;
+  gap: 40px;
+  
+  .top-left {
+    flex: 2.5;
+  }
+  
+  .top-right {
+    flex: 1;
+    margin-left: 15px;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    
+    .top-right {
+      margin-left: 0;
+    }
+  }
+}
+
+.footer-bottom-row {
+  display: flex;
+  gap: 40px;
+  
+  .bottom-left {
+    flex: 2.5;
+  }
+  
+  .bottom-right {
+    flex: 1;
+    margin-left: 15px;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 15px;
+    
+    .bottom-right {
+      margin-left: 0;
+    }
+  }
+}
+
+.footer-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  
+  .section-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 2px;
+  }
+}
+
+// Top Left - Design Navigation + Slider
+.top-left {
+  .top-labels-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 4px;
+    gap: 15px;
+    
+    .section-label {
+      text-align: left !important;
+      margin-bottom: 0 !important;
+      flex-shrink: 0;
+      font-size: 12px;
+    }
+    
+    .variation-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 180px;
+      margin-left: auto;
+      
+      .variation-label {
+        font-size: 12px;
+        color: #666;
+      }
+    }
+  }
+  
+  .design-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+  }
+  
+  .design-buttons {
+    display: flex;
+    gap: 20px;
+    flex-shrink: 0;
+    
+    .design-btn {
+      background: white;
+      border: none;
+      padding: 8px 20px;
+      font-size: 9px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 20px;
+      transition: all 0.3s ease;
+      color: #333;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+      
+      &:hover {
+        background: #f0f0f0;
+      }
+      
+      &.active {
+        background: #333;
+        color: white;
+      }
+    }
+  }
+  
+  .variation-controls {
+    width: 180px;
+    margin-left: auto;
+    
+    .variation-slider {
+      width: 100%;
+      height: 3px;
+      background: #ddd;
+      outline: none;
+      border-radius: 2px;
+      appearance: none;
+      
+      &::-webkit-slider-thumb {
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #333;
+        border-radius: 50%;
+        cursor: pointer;
+      }
+      
+      &::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #333;
+        border-radius: 50%;
+        cursor: pointer;
+        border: none;
+      }
+    }
+  }
+}
+
+// Top Right - Editing Actions
+.top-right {
+  .section-label {
+    text-align: left !important;
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 3px;
+    
+    .action-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      background: white;
+      border: none;
+      padding: 4px 20px;
+      cursor: pointer;
+      border-radius: 3px;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        background: #f0f0f0;
+      }
+      
+      svg {
+        font-size: 16px;
+        color: #333;
+      }
+      
+      span {
+        font-size: 7px;
+        color: #333;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+// Bottom Left - Design Further Section
+.bottom-left {
+  .section-label {
+    text-align: left !important;
+  }
+  
+  .input-with-mic {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    .mic-icon {
+      position: absolute;
+      left: 8px;
+      font-size: 12px;
+      color: #666;
+      z-index: 1;
+    }
+    
+    .design-input {
+      width: 100%;
+      padding: 20px 20px 20px 25px;
+      border: none;
+      border-radius: 3px;
+      font-size: 11px;
+      background: white;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      
+      &:focus {
+        outline: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      }
+      
+      &::placeholder {
+        color: #999;
+      }
+    }
+  }
+}
+
+// Bottom Right - Upload and Generate Section
+.bottom-right {
+  .section-label {
+    text-align: left !important;
+  }
+  
+  .upload-generate-row {
+    display: flex;
+    gap: 30px;
+    align-items: center;
+    
+    .upload-area {
+      position: relative;
+      border: 2px dashed #ccc;
+      border-radius: 3px;
+      padding: 4px 8px;
+      text-align: center;
+      background: white;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      flex: 1;
+      max-width: 100px;
+      
+      &:hover {
+        background: #f9f9f9;
+        border-color: #999;
+      }
+      
+      .upload-input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+      }
+      
+      .upload-label {
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        
+        svg {
+          font-size: 14px;
+          color: #666;
+        }
+        
+        span {
+          font-size: 8px;
+          color: #666;
+          font-weight: 400;
+          white-space: nowrap;
+        }
+      }
+    }
+    
+    .generate-btn {
+      background: #ff4444;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 0px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+      
+      &:hover {
+        background: #555;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .design-main-content {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .design-main-content {
+    padding: 8px;
+  }
+}

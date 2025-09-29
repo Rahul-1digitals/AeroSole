@@ -4,6 +4,8 @@ import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import CarouselSection from './components/CarouselSection';
 import CustomShoeResult from './components/CustomShoeResult';
+import ShoeDesignPage from './components/ShoeDesignPage';
+import ProductDetailPage from './components/ProductDetailPage';
 import './App.scss';
 
 // Home Page Component
@@ -53,12 +55,19 @@ function CustomShoePage() {
   );
 }
 
+// Shoe Design Page Component
+function ShoeDesignPageRoute() {
+  return <ShoeDesignPage />;
+}
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/custom-shoe" element={<CustomShoePage />} />
+        <Route path="/design" element={<ShoeDesignPageRoute />} />
+        <Route path="/product/:designId" element={<ProductDetailPage />} />
       </Routes>
     </Router>
   );

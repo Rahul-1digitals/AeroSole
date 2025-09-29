@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaMicrophone } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import EditDesignLoading from './EditDesignLoading';
 import './CustomShoeResult.scss';
 
 const CustomShoeResult = ({ onClose, onBack }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -96,8 +98,8 @@ const CustomShoeResult = ({ onClose, onBack }) => {
 
   const handleEditLoadingComplete = () => {
     setShowEditLoading(false);
-    // Here you can navigate to the actual edit page or show edit results
-    console.log('Edit loading completed - navigate to edit page');
+    // Navigate to the shoe design page
+    navigate('/design');
   };
 
   return (
