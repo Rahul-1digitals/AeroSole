@@ -245,7 +245,7 @@ const ShoeDesignPage = () => {
               </div>
               
               <button className="generate-btn" onClick={handleGenerate}>
-                generate button
+                GENERATE
               </button>
             </div>
           </div>
