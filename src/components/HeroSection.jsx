@@ -35,7 +35,18 @@ const HeroSection = ({ onShowCustomResult }) => {
           animate={{ x: 0 }}
           transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
         >
-          WHAT SHOE WILL YOU MAKE?
+          WHAT SHOE WILL YOU <span style={{ position: 'relative', display: 'inline-block' }}>
+            T
+            <span style={{ 
+              position: 'absolute', 
+              top: '0', 
+              left: '0', 
+              width: '100%', 
+              height: '100%', 
+              background: 'linear-gradient(to top right, transparent 45%, currentColor 47%, currentColor 53%, transparent 55%)',
+              pointerEvents: 'none'
+            }}></span>
+          </span>MAKE?
         </motion.h1>
         <div className="hero-cta-buttons">
           <button className="hero-btn">
