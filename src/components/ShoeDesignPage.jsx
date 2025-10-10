@@ -18,10 +18,10 @@ const ShoeDesignPage = () => {
   });
 
   const baseDesigns = [
-    { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
-    { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
-    { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
-    { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
+    { id: 1, name: 'DESIGN 1', image: '/aerosole/images/design1.png', leopardImage: '/aerosole/images/design1_lepoard.png', price: '$70' },
+    { id: 2, name: 'DESIGN 2', image: '/aerosole/images/design2.png', leopardImage: '/aerosole/images/design2_lepoard.png', price: '$70' },
+    { id: 3, name: 'DESIGN 3', image: '/aerosole/images/design3.png', leopardImage: '/aerosole/images/design3_lepoard.png', price: '$70' },
+    { id: 4, name: 'DESIGN 4', image: '/aerosole/images/design4.png', leopardImage: '/aerosole/images/design4_lepoard.png', price: '$70' }
   ];
 
   // Save state to sessionStorage whenever it changes
@@ -149,11 +149,11 @@ const ShoeDesignPage = () => {
                               build: showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white',
                               price: design.price,
                               images: [
-                                `/images/${baseKey}/${key}_item1.png`,
-                                `/images/${baseKey}/${key}_item2.png`,
-                                `/images/${baseKey}/${key}_item3.png`,
+                                `/aerosole/images/${baseKey}/${key}_item1.png`,
+                                `/aerosole/images/${baseKey}/${key}_item2.png`,
+                                `/aerosole/images/${baseKey}/${key}_item3.png`,
                               ],
-                              video: `/videos/${baseKey}/${key}_video.mp4`,
+                              video: `/aerosole/videos/${baseKey}/${key}_video.mp4`,
                               sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
                             };
                             navigate(`/product/${key}`, { state: { item } });

@@ -21,7 +21,7 @@ function HomePage() {
       {/* Global video background */}
       <video
         className="global-hero-video"
-        src="/videos/hero.mp4"
+        src="/aerosole/videos/hero.mp4"
         autoPlay
         loop
         muted
@@ -54,23 +54,22 @@ function CustomShoePage() {
     <CustomShoeResult onClose={handleClose} onBack={handleBack} />
   );
 }
-
 // Shoe Design Page Component
 function ShoeDesignPageRoute() {
   return <ShoeDesignPage />;
 }
 
-function App() {
+const App = () => {
   return (
-    <Router>
+    <Router basename="/aerosole">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/custom-shoe" element={<CustomShoePage />} />
         <Route path="/design" element={<ShoeDesignPageRoute />} />
-        <Route path="/product/:designId" element={<ProductDetailPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
       </Routes>
     </Router>
   );
-}
+};
 
 export default App;
