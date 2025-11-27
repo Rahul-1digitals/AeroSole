@@ -214,6 +214,53 @@
   }
 }
 
+// New styles for speech recognition
+.interim-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+.ai-status-text {
+  color: #4CAF50;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  text-align: center;
+  animation: pulse 1.5s infinite;
+}
+
+.ai-transcribed-text.error {
+  color: #ff6b6b;
+  text-align: center;
+}
+
+.stop-recording-btn {
+  background: #e02b2b;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 15px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #c41e3a;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
 @media (max-width: 480px) {
   .soundwave {
     &.soundwave-left {

@@ -1,62 +1,123 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './AIVoiceRecorder.scss';
 
 const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
   const [displayedText, setDisplayedText] = useState('');
-  const [isRecording, setIsRecording] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [interimText, setInterimText] = useState('');
   
-  const targetText = "skate shoes in a nineties style with a leopard pattern";
+  const recognitionRef = useRef(null);
   
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        setDisplayedText(prev => prev + finalTranscript);
+        setInterimText(interimTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+        setIsRecording(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setIsRecording(false);
+        setInterimText('');
+        
+        // Auto-complete after speech ends
+        setTimeout(() => {
+          if (onComplete) {
+            onComplete();
+          }
+          
+          setIsFadingOut(true);
+          
+          setTimeout(() => {
+            onClose();
+          }, 1000);
+        }, 1000);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [onComplete, onClose]);
+
+  // Handle visibility changes
   useEffect(() => {
     if (!isVisible) {
       setDisplayedText('');
-      setIsRecording(true);
-      setIsTyping(false);
+      setInterimText('');
+      setIsRecording(false);
+      setIsListening(false);
       setIsFadingOut(false);
+      
+      // Stop recognition if it's running
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+      }
       return;
     }
 
-    // Start recording animation for 2 seconds
-    const recordingTimer = setTimeout(() => {
-      setIsRecording(false);
-      setIsTyping(true);
-      
-      // Start typing animation
-      let currentIndex = 0;
-      const typingInterval = setInterval(() => {
-        if (currentIndex <= targetText.length) {
-          setDisplayedText(targetText.slice(0, currentIndex));
-          currentIndex++;
-        } else {
-          clearInterval(typingInterval);
-          setIsTyping(false);
-          
-          // Wait 1 second then trigger completion and start fade out simultaneously
-          setTimeout(() => {
-            // Trigger completion immediately to show CustomShoeResult
-            if (onComplete) {
-              onComplete();
-            }
-            
-            // Start fade out at the same time
-            setIsFadingOut(true);
-            
-            // Close after fade animation completes
-            setTimeout(() => {
-              onClose();
-            }, 1000); // Match the fade animation duration
-          }, 800); // Slightly reduced wait time
-        }
-      }, 100); // 100ms per character for natural typing speed
-      
-    }, 2000);
+    // Start speech recognition when component becomes visible
+    if (speechSupported && recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+      }
+    }
+  }, [isVisible, speechSupported, isListening]);
 
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      clearTimeout(recordingTimer);
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+      }
     };
-  }, [isVisible, onClose]);
+  }, [isListening]);
+
+  // Manual stop function
+  const handleStopRecording = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+  };
 
   if (!isVisible) return null;
 
@@ -93,10 +154,25 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
         </div>
         
         <div className="ai-text-container">
-          <p className="ai-transcribed-text">
-            {displayedText}
-            {isTyping && <span className="typing-cursor">|</span>}
-          </p>
+          {!speechSupported ? (
+            <p className="ai-transcribed-text error">
+              Speech recognition is not supported in your browser. Please use Chrome or Edge.
+            </p>
+          ) : (
+            <p className="ai-transcribed-text">
+              {displayedText}
+              <span className="interim-text">{interimText}</span>
+              {isListening && <span className="typing-cursor">|</span>}
+            </p>
+          )}
+          {isListening && (
+            <>
+              <p className="ai-status-text">Listening... Speak now</p>
+              <button className="stop-recording-btn" onClick={handleStopRecording}>
+                Stop Recording
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
