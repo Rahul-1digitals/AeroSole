@@ -25,16 +25,23 @@ export const searchProducts = async (query) => {
     
     console.log('API Response:', data); // Debug log
     
-    // Check if the request was successful
-    if (data.completion_status === 'success' && data.result && data.result.products && data.result.products.length > 0) {
-      const firstProduct = data.result.products[0];
-      console.log('First Product:', firstProduct); // Debug log
-      
+    // Treat any completion_status === 'success' as a successful call,
+    // even if product_count is 0 (no products found).
+    if (data.completion_status === 'success' && data.result) {
+      const products = Array.isArray(data.result.products) ? data.result.products : [];
+      const firstProduct = products[0];
+
+      console.log('First Product (may be undefined if no products):', firstProduct); // Debug log
+
       return {
         success: true,
-        product: firstProduct, // Return first product
-        allProducts: data.result.products,
-        productCount: data.result.product_count
+        // Pass through the new API structure so pages like CustomShoeResult
+        // can inspect result.product_count and result.products directly.
+        ...data,
+        // Backward-compatible fields for existing UI logic
+        product: firstProduct,              // first product if present, otherwise undefined
+        allProducts: products,              // full array (may be empty)
+        productCount: data.result.product_count // numeric count, can be 0
       };
     } else {
       console.log('API Error: No products found or invalid response'); // Debug log

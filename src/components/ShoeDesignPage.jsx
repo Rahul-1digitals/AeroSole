@@ -30,6 +30,9 @@ const ShoeDesignPage = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [noProductsFromGenerate, setNoProductsFromGenerate] = useState(false);
+  const [lowConfidenceProduct, setLowConfidenceProduct] = useState(null);
+  const [showDesignsAfterLowConfidence, setShowDesignsAfterLowConfidence] = useState(false);
   
   // Refs for speech recognition
   const recognitionRef = useRef(null);
@@ -39,14 +42,109 @@ const ShoeDesignPage = () => {
   const apiProducts = useMemo(() => {
     return location.state?.products || [];
   }, [location.state?.products]);
-  
+
+  const comingFromProductDetail = location.state?.fromProductDetail;
+
   // Initialize designs only once on component mount
   useEffect(() => {
     if (!isInitialized) {
       let initialDesigns;
-      
-      // FIRST check apiProducts (from Edit Design navigation) - highest priority
-      if (apiProducts.length > 0) {
+
+      if (comingFromProductDetail) {
+        // When returning from ProductDetailPage, prefer latest generated products (Set B, Set C, ...)
+        try {
+          const latestProducts = sessionStorage.getItem('latestGeneratedProducts');
+          if (latestProducts) {
+            const parsedLatest = JSON.parse(latestProducts);
+            if (Array.isArray(parsedLatest) && parsedLatest.length > 0 && parsedLatest[0].img) {
+              initialDesigns = parsedLatest.slice(0, 4).map((product, index) => ({
+                id: index + 1,
+                name: `DESIGN ${index + 1}`,
+                image: product.img || `/images/design${index + 1}.png`,
+                leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+                price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+                title: `Design ${index + 1}`,
+                description: product.short_description
+              }));
+              console.log('ShoeDesignPage - Using latestGeneratedProducts from sessionStorage (from ProductDetailPage):', initialDesigns);
+            }
+          }
+        } catch (e) {
+          console.log('ShoeDesignPage - Failed to parse latestGeneratedProducts from sessionStorage (from ProductDetailPage)');
+        }
+
+        if (!initialDesigns) {
+          try {
+            const sessionProducts = sessionStorage.getItem('editDesignProducts');
+            if (sessionProducts) {
+              const parsed = JSON.parse(sessionProducts);
+              if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].img) {
+                initialDesigns = parsed.slice(0, 4).map((product, index) => ({
+                  id: index + 1,
+                  name: `DESIGN ${index + 1}`,
+                  image: product.img || `/images/design${index + 1}.png`,
+                  leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+                  price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+                  title: `Design ${index + 1}`,
+                  description: product.short_description
+                }));
+                console.log('ShoeDesignPage - Fallback to editDesignProducts from sessionStorage (from ProductDetailPage):', initialDesigns);
+              }
+            }
+          } catch (e) {
+            console.log('ShoeDesignPage - Failed to parse editDesignProducts from sessionStorage (from ProductDetailPage)');
+          }
+        }
+      } else {
+        // 1) Highest priority: original Edit Design products from CustomShoeResult (Set A)
+        try {
+          const sessionProducts = sessionStorage.getItem('editDesignProducts');
+          if (sessionProducts) {
+            const parsed = JSON.parse(sessionProducts);
+            if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].img) {
+              initialDesigns = parsed.slice(0, 4).map((product, index) => ({
+                id: index + 1,
+                name: `DESIGN ${index + 1}`,
+                image: product.img || `/images/design${index + 1}.png`,
+                leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+                price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+                title: `Design ${index + 1}`,
+                description: product.short_description
+              }));
+              console.log('ShoeDesignPage - Using editDesignProducts from sessionStorage:', initialDesigns);
+            }
+          }
+        } catch (e) {
+          console.log('ShoeDesignPage - Failed to parse editDesignProducts from sessionStorage');
+        }
+
+        // 2) Next: latest generated products (Set B, Set C, ...) for Back to editor
+        if (!initialDesigns) {
+          try {
+            const latestProducts = sessionStorage.getItem('latestGeneratedProducts');
+            if (latestProducts) {
+              const parsedLatest = JSON.parse(latestProducts);
+              if (Array.isArray(parsedLatest) && parsedLatest.length > 0 && parsedLatest[0].img) {
+                initialDesigns = parsedLatest.slice(0, 4).map((product, index) => ({
+                  id: index + 1,
+                  name: `DESIGN ${index + 1}`,
+                  image: product.img || `/images/design${index + 1}.png`,
+                  leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+                  price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+                  title: `Design ${index + 1}`,
+                  description: product.short_description
+                }));
+                console.log('ShoeDesignPage - Using latestGeneratedProducts from sessionStorage:', initialDesigns);
+              }
+            }
+          } catch (e) {
+            console.log('ShoeDesignPage - Failed to parse latestGeneratedProducts from sessionStorage');
+          }
+        }
+      }
+
+      // 3) Next: apiProducts passed via location.state (e.g., direct navigation)
+      if (!initialDesigns && apiProducts.length > 0) {
         initialDesigns = apiProducts.map((product, index) => ({
           id: index + 1,
           name: `DESIGN ${index + 1}`,
@@ -58,14 +156,13 @@ const ShoeDesignPage = () => {
         }));
         console.log('ShoeDesignPage - Using apiProducts from Edit Design:', initialDesigns);
       }
-      
-      // If no apiProducts, then check localStorage
+
+      // 4) Next: localStorage (only if no session/api products)
       if (!initialDesigns) {
         const savedDesigns = localStorage.getItem('shoeDesigns');
         if (savedDesigns) {
           try {
             const parsedDesigns = JSON.parse(savedDesigns);
-            // Validate that it's a proper array with design objects
             if (Array.isArray(parsedDesigns) && parsedDesigns.length > 0 && parsedDesigns[0].image) {
               initialDesigns = parsedDesigns;
               console.log('ShoeDesignPage - Restored designs from localStorage:', initialDesigns);
@@ -75,8 +172,8 @@ const ShoeDesignPage = () => {
           }
         }
       }
-      
-      // Final fallback to static defaults
+
+      // 5) Final fallback to static defaults
       if (!initialDesigns) {
         initialDesigns = [
           { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70', title: 'Design 1', description: 'Classic design' },
@@ -86,7 +183,7 @@ const ShoeDesignPage = () => {
         ];
         console.log('ShoeDesignPage - Using default designs:', initialDesigns);
       }
-      
+
       setCurrentDesigns(initialDesigns);
       setIsInitialized(true);
     }
@@ -206,6 +303,11 @@ const ShoeDesignPage = () => {
       return;
     }
 
+    // Reset no-products / low-confidence flags for this generate
+    setNoProductsFromGenerate(false);
+    setLowConfidenceProduct(null);
+    setShowDesignsAfterLowConfidence(false);
+
     setIsGenerating(true);
     setIsImageLoading(true);
     console.log('ShoeDesignPage - Starting generation, loading states set to true');
@@ -215,35 +317,79 @@ const ShoeDesignPage = () => {
       const apiResult = await searchProducts(designText);
       console.log('API result received:', apiResult);
       
-      if (apiResult.success && apiResult.allProducts && apiResult.allProducts.length > 0) {
-        // Update current designs with new API response images
-        const updatedDesigns = apiResult.allProducts.map((product, index) => ({
-          id: index + 1,
-          name: `DESIGN ${index + 1}`,
-          image: product.img || `/images/design${index + 1}.png`,
-          leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
-          price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
-          title: `Design ${index + 1}`,
-          description: product.short_description
-        }));
-        
-        // Update the designs state to show new images
-        setCurrentDesigns(updatedDesigns);
-        console.log('Updated designs with new API images:', updatedDesigns);
-        
-        // Save to localStorage for persistence
-        localStorage.setItem('shoeDesigns', JSON.stringify(updatedDesigns));
-        console.log('ShoeDesignPage - Saved designs to localStorage:', updatedDesigns);
-        
-        // Clear the text field after successful generation
-        setDesignText('');
-        
-        // Reset image loading after successful update
-        setTimeout(() => {
+      if (apiResult.success) {
+        // Normalize products and product_count from new/old API structure
+        const products = Array.isArray(apiResult.result?.products)
+          ? apiResult.result.products
+          : Array.isArray(apiResult.allProducts)
+            ? apiResult.allProducts
+            : [];
+        const productCount =
+          typeof apiResult.result?.product_count === 'number'
+            ? apiResult.result.product_count
+            : typeof apiResult.productCount === 'number'
+              ? apiResult.productCount
+              : products.length;
+        const firstProduct = products[0];
+
+        // Case 1: zero products -> show "No products found" UI, keep existing designs
+        if (productCount === 0 || products.length === 0) {
+          console.log('ShoeDesignPage - Generate returned zero products');
+          setNoProductsFromGenerate(true);
           setIsImageLoading(false);
-          console.log('ShoeDesignPage - Image loading reset to false after successful generation');
-        }, 200);
+          return;
+        }
+
+        // Case 2: first product has low confidence -> show suggestion UI first
+        if (
+          firstProduct &&
+          typeof firstProduct.confidence === 'number' &&
+          firstProduct.confidence < 60
+        ) {
+          console.log('ShoeDesignPage - Generate returned low-confidence first product');
+          setLowConfidenceProduct(firstProduct);
+          setShowDesignsAfterLowConfidence(false);
+        }
+
+        if (products.length > 0) {
+          // Update current designs with new API response images
+          const updatedDesigns = products.map((product, index) => ({
+            id: index + 1,
+            name: `DESIGN ${index + 1}`,
+            image: product.img || `/images/design${index + 1}.png`,
+            leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+            price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+            title: `Design ${index + 1}`,
+            description: product.short_description
+          }));
+          
+          // Update the designs state to show new images
+          setCurrentDesigns(updatedDesigns);
+          console.log('Updated designs with new API images:', updatedDesigns);
+          
+          // Also persist these as the latest generated designs for Back to Editor (but not for reset)
+          try {
+            sessionStorage.setItem('latestGeneratedProducts', JSON.stringify(products));
+            console.log('ShoeDesignPage - Saved latest API products to sessionStorage (latestGeneratedProducts)');
+          } catch (e) {
+            console.log('ShoeDesignPage - Failed to save latestGeneratedProducts to sessionStorage');
+          }
+          
+          // Save to localStorage for persistence
+          localStorage.setItem('shoeDesigns', JSON.stringify(updatedDesigns));
+          console.log('ShoeDesignPage - Saved designs to localStorage:', updatedDesigns);
+          
+          // Clear the text field after successful generation
+          setDesignText('');
+          
+          // Reset image loading after successful update
+          setTimeout(() => {
+            setIsImageLoading(false);
+            console.log('ShoeDesignPage - Image loading reset to false after successful generation');
+          }, 200);
+        }
       } else {
+        // Non-successful API result (e.g., backend error format)
         alert('No products found for your search. Please try a different description.');
         setIsImageLoading(false);
       }
@@ -257,23 +403,58 @@ const ShoeDesignPage = () => {
   };
 
   const handleReset = () => {
-    // Reset to original default designs
-    const defaultDesigns = [
-      { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
-      { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
-      { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
-      { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
-    ];
-    
-    setCurrentDesigns(defaultDesigns);
+    // Prefer restoring the 4 products that came from CustomShoeResult (if available)
+    let resetDesigns = null;
+
+    try {
+      const sessionProducts = sessionStorage.getItem('editDesignProducts');
+      if (sessionProducts) {
+        const parsed = JSON.parse(sessionProducts);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].img) {
+          resetDesigns = parsed.slice(0, 4).map((product, index) => ({
+            id: index + 1,
+            name: `DESIGN ${index + 1}`,
+            image: product.img || `/images/design${index + 1}.png`,
+            leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+            price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+            title: `Design ${index + 1}`,
+            description: product.short_description
+          }));
+          console.log('ShoeDesignPage - Reset to editDesignProducts from sessionStorage:', resetDesigns);
+        }
+      }
+    } catch (e) {
+      console.log('ShoeDesignPage - Failed to parse editDesignProducts in reset');
+    }
+
+    // If no session products, fall back to the static defaults
+    if (!resetDesigns) {
+      resetDesigns = [
+        { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
+        { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
+        { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
+        { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
+      ];
+      console.log('ShoeDesignPage - Reset to static default designs:', resetDesigns);
+    }
+
+    setCurrentDesigns(resetDesigns);
     setShowLeopardVariants(false);
     setDesignText('');
     setIsImageLoading(false);
     setIsGenerating(false);
-    
-    // Clear localStorage when resetting to defaults
-    localStorage.removeItem('shoeDesigns');
-    console.log('ShoeDesignPage - Cleared localStorage and reset to default designs');
+    setLowConfidenceProduct(null);
+    setShowDesignsAfterLowConfidence(false);
+
+    // Clear latestGeneratedProducts so Back to editor reflects the reset Set A designs
+    try {
+      sessionStorage.removeItem('latestGeneratedProducts');
+      console.log('ShoeDesignPage - Cleared latestGeneratedProducts on reset');
+    } catch (e) {
+      console.log('ShoeDesignPage - Failed to clear latestGeneratedProducts on reset');
+    }
+
+    // Keep localStorage as-is; reset is based on session or static only
   };
 
   const handlePrevSlide = () => {
@@ -311,89 +492,140 @@ const ShoeDesignPage = () => {
           <button className="link-btn">COMMUNITY CREATIONS</button>
         </div>
 
-        {/* Carousel Section - Two items per view */}
-        <div className="carousel-sections">
-          <button 
-            className="carousel-nav prev"
-            onClick={handlePrevSlide}
-            disabled={currentSlide === 0}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15,18 9,12 15,6"></polyline>
-            </svg>
-          </button>
-          
-          <button 
-            className="carousel-nav next"
-            onClick={handleNextSlide}
-            disabled={currentSlide === Math.ceil(designs.length / 2) - 1}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="9,18 15,12 9,6"></polyline>
-            </svg>
-          </button>
-
-          <div className="carousel-viewport">
-            <div 
-              className="carousel-track"
-              style={{ 
-                transform: `translateX(-${currentSlide * 100}%)`
-              }}
-            >
-              {/* Group designs in pairs */}
-              {[0, 2].map((startIndex) => (
-                <div key={startIndex} className="carousel-group">
-                  {designs.slice(startIndex, startIndex + 2).map((design) => (
-                    <div 
-                      key={design.id}
-                      className={`carousel-slide ${selectedDesign === design.id ? 'active' : ''} ${isImageLoading ? 'loading' : ''}`}
-                      onClick={() => handleDesignSelect(design.id)}
-                    >
-                      {isImageLoading ? (
-                        <div className="loading-container">
-                          <LoadingSpinner size="large" />
-                        </div>
-                      ) : (
-                        <>
-                          <div className="design-info">
-                            <h3>{design.name}</h3>
-                            <button
-                              className="shop-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const item = {
-                                  id: `design${design.id}`,
-                                  title: design.title || 'OLD SKOOL',
-                                  build: design.description || (showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white'),
-                                  price: design.price,
-                                  mainImage: design.image, // Pass the current displayed image
-                                  description: design.description,
-                                  sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
-                                };
-                                navigate(`/product/design${design.id}`, { state: { item } });
-                              }}
-                              aria-label={`Shop ${design.name}`}
-                            >
-                              SHOP NOW FROM {design.price}
-                            </button>
-                          </div>
-                          <div className="shoe-image">
-                            <img 
-                              src={design.image} 
-                              alt={design.name}
-                              onLoad={() => setIsImageLoading(false)}
-                              onError={() => setIsImageLoading(false)}
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ))}
+        {/* No products / low confidence messages from Generate */}
+        {noProductsFromGenerate && (
+          <div className="no-products-wrapper">
+            <div className="no-products-message">
+              <h2>No products found</h2>
+              <p>We couldn&apos;t find any shoes matching your description. Please try a different design prompt.</p>
+              <button
+                className="back-to-results-btn"
+                onClick={() => setNoProductsFromGenerate(false)}
+              >
+                BACK TO LAST RESULTS
+              </button>
             </div>
           </div>
-        </div>
+        )}
+
+        {lowConfidenceProduct && !showDesignsAfterLowConfidence && (
+          <div className="no-products-wrapper">
+            <div className="no-products-message">
+              <h2>No strong matches found</h2>
+              <p>We couldn&apos;t confidently match your description, but here&apos;s one option you might like. Try refining your prompt for better results.</p>
+            </div>
+            <div className="suggested-product-card">
+              <div className="suggested-image">
+                {lowConfidenceProduct.img ? (
+                  <img
+                    src={lowConfidenceProduct.img}
+                    alt={lowConfidenceProduct.title || 'Suggested design'}
+                  />
+                ) : (
+                  <div className="loading-container">
+                    <LoadingSpinner size="large" />
+                  </div>
+                )}
+              </div>
+              <div className="suggested-info">
+                <h3>{lowConfidenceProduct.title || 'Suggested design'}</h3>
+                <p>{lowConfidenceProduct.short_description || lowConfidenceProduct.subtitle}</p>
+                <button
+                  className="view-all-products-btn"
+                  type="button"
+                  onClick={() => setShowDesignsAfterLowConfidence(true)}
+                >
+                  VIEW ALL PRODUCTS
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!noProductsFromGenerate && (!lowConfidenceProduct || showDesignsAfterLowConfidence) && (
+          <div className="carousel-sections">
+            <button 
+              className="carousel-nav prev"
+              onClick={handlePrevSlide}
+              disabled={currentSlide === 0}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15,18 9,12 15,6"></polyline>
+              </svg>
+            </button>
+            
+            <button 
+              className="carousel-nav next"
+              onClick={handleNextSlide}
+              disabled={currentSlide === Math.ceil(designs.length / 2) - 1}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="9,18 15,12 9,6"></polyline>
+              </svg>
+            </button>
+
+            <div className="carousel-viewport">
+              <div 
+                className="carousel-track"
+                style={{ 
+                  transform: `translateX(-${currentSlide * 100}%)`
+                }}
+              >
+                {/* Group designs in pairs */}
+                {[0, 2].map((startIndex) => (
+                  <div key={startIndex} className="carousel-group">
+                    {designs.slice(startIndex, startIndex + 2).map((design) => (
+                      <div 
+                        key={design.id}
+                        className={`carousel-slide ${selectedDesign === design.id ? 'active' : ''} ${isImageLoading ? 'loading' : ''}`}
+                        onClick={() => handleDesignSelect(design.id)}
+                      >
+                        {isImageLoading ? (
+                          <div className="loading-container">
+                            <LoadingSpinner size="large" />
+                          </div>
+                        ) : (
+                          <>
+                            <div className="design-info">
+                              <h3>{design.name}</h3>
+                              <button
+                                className="shop-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const item = {
+                                    id: `design${design.id}`,
+                                    title: design.title || 'OLD SKOOL',
+                                    build: design.description || (showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white'),
+                                    price: design.price,
+                                    mainImage: design.image, // Pass the current displayed image
+                                    description: design.description,
+                                    sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
+                                  };
+                                  navigate(`/product/design${design.id}`, { state: { item } });
+                                }}
+                                aria-label={`Shop ${design.name}`}
+                              >
+                                SHOP NOW FROM {design.price}
+                              </button>
+                            </div>
+                            <div className="shoe-image">
+                              <img 
+                                src={design.image} 
+                                alt={design.name}
+                                onLoad={() => setIsImageLoading(false)}
+                                onError={() => setIsImageLoading(false)}
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer Controls */}

@@ -19,6 +19,8 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const [apiProcessed, setApiProcessed] = useState(false);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [isApiLoading, setIsApiLoading] = useState(false);
+  const [noProductsFromVoice, setNoProductsFromVoice] = useState(false);
+  const [hasVoiceSearch, setHasVoiceSearch] = useState(false);
   
   // Speech recognition states
   const [isListening, setIsListening] = useState(false);
@@ -29,6 +31,34 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   // Refs for speech recognition
   const recognitionRef = useRef(null);
   const accumulatedTextRef = useRef('');
+
+  // Flags for new API response structure
+  const productCount = apiResult?.result?.product_count;
+  const productsArray = apiResult?.result?.products || [];
+  const firstApiProduct = productsArray[0];
+  const zeroProductsFromApi = !hasVoiceSearch && apiResult && apiResult.success && (productCount === 0 || productsArray.length === 0);
+  const showZeroProducts = zeroProductsFromApi || noProductsFromVoice;
+  const lowConfidenceFirstProduct = apiResult && apiResult.success && firstApiProduct &&
+    typeof firstApiProduct.confidence === 'number' && firstApiProduct.confidence < 60;
+
+  // Determine which product to show in the footer (initial API result vs latest voice search)
+  const currentFooterProduct = useMemo(() => {
+    // If we have done at least one in-page voice search, prefer products from that search
+    if (hasVoiceSearch && allProducts && allProducts.length > 0) {
+      return allProducts[0];
+    }
+
+    // Fallback to the initial apiResult
+    if (firstApiProduct) {
+      return firstApiProduct;
+    }
+
+    if (apiResult && apiResult.product) {
+      return apiResult.product;
+    }
+
+    return null;
+  }, [hasVoiceSearch, allProducts, firstApiProduct, apiResult]);
 
   const steps = [
     {
@@ -236,6 +266,9 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
         console.log('Speech recognition ended. Final text:', finalText);
         
         if (finalText) {
+          // Mark that we have performed at least one in-page voice search
+          setHasVoiceSearch(true);
+          
           // Set loading states when API call starts
           setIsImageLoading(true);
           setIsApiLoading(true);
@@ -246,10 +279,38 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
             const newApiResult = await searchProducts(finalText);
             console.log('New API result received:', newApiResult);
             
-            if (newApiResult.success && newApiResult.product) {
-              // Update the current display with new results
-              setDisplayedText(finalText);
-              setCurrentImage(newApiResult.product.img || currentImage);
+            if (newApiResult.success) {
+              const internalProducts = Array.isArray(newApiResult.result?.products)
+                ? newApiResult.result.products
+                : Array.isArray(newApiResult.allProducts)
+                  ? newApiResult.allProducts
+                  : [];
+              const internalProductCount =
+                typeof newApiResult.result?.product_count === 'number'
+                  ? newApiResult.result.product_count
+                  : typeof newApiResult.productCount === 'number'
+                    ? newApiResult.productCount
+                    : internalProducts.length;
+
+              // Handle zero-products case from in-page voice search
+              if (internalProductCount === 0 || internalProducts.length === 0) {
+                console.log('CustomShoeResult - In-page voice search returned zero products');
+                setNoProductsFromVoice(true);
+                setDisplayedText(newApiResult.user_query || finalText);
+                // Use default image and stop loading
+                setCurrentImage(steps[0].image);
+                setIsImageLoading(false);
+                setIsApiLoading(false);
+                return;
+              }
+
+              // Successful response with at least one product
+              const firstInternalProduct = newApiResult.product || internalProducts[0];
+              if (firstInternalProduct) {
+                setNoProductsFromVoice(false);
+                setDisplayedText(finalText);
+                setCurrentImage(firstInternalProduct.img || currentImage || steps[0].image);
+              }
               
               // Update all products for Edit Design
               if (newApiResult.allProducts) {
@@ -263,6 +324,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
                 console.log('CustomShoeResult - Loading states reset after API response');
               }, 1000);
             } else {
+              // Update the current display with new results
               // Reset loading states for failed API response
               setIsImageLoading(false);
               setIsApiLoading(false);
@@ -377,10 +439,22 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
 
   const handleEditLoadingComplete = () => {
     setShowEditLoading(false);
-    // Navigate to design page with all products
+    // Take first 4 products from API result
+    const editProducts = allProducts.slice(0, 4);
+
+    // Persist these products so ShoeDesignPage can restore them even after navigation
+    if (editProducts && editProducts.length > 0) {
+      try {
+        sessionStorage.setItem('editDesignProducts', JSON.stringify(editProducts));
+      } catch (e) {
+        console.log('Failed to store editDesignProducts in sessionStorage');
+      }
+    }
+
+    // Navigate to design page with these products in location.state as well
     navigate('/design', { 
       state: { 
-        products: allProducts.slice(0, 4) // Show products 1-4 (first four products)
+        products: editProducts
       } 
     });
   };
@@ -414,132 +488,230 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
         </button>
       </div>
 
-      {/* Main Content */}
-      <div className="main-content">
-        {/* Custom Shoe Image */}
-        <div className="shoe-display">
-          {isImageLoading || isApiLoading ? (
-            <div className="loading-container">
-              <LoadingSpinner size="large" />
+      {showZeroProducts ? (
+        // Case 1: API returned zero products (or in-page voice search with zero products)
+        <>
+          <div className="no-products-wrapper">
+            <div className="no-products-message">
+              <h2>No products found</h2>
+              <p>We couldn&apos;t find any shoes matching your request. Please try a different description.</p>
             </div>
-          ) : currentImage ? (
-            <img 
-              src={currentImage} 
-              alt="Custom AeroSole Shoe" 
-              className="shoe-image"
-              onError={(e) => {
-                console.log('Image failed to load, using fallback');
-                e.target.src = steps[0].image; // Fallback to default image
-              }}
-            />
-          ) : (
-            <div className="loading-container">
-              <LoadingSpinner size="large" />
+          </div>
+
+          {/* Allow user to immediately give another voice request */}
+          <div className="transcript-section">
+            <p className="transcript-text">
+              {displayedText}
+              {isListening && (
+                <span className="typing-cursor">|</span>
+              )}
+            </p>
+            <div className="audio-controls">
+              <div className="sound-wave-icon">
+                {isPlaying || isListening ? (
+                  <div className="wave-bars">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                ) : (
+                  <div className="static-audio-bars">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                )}
+              </div>
+              {isListening ? (
+                <button 
+                  className="stop-recording-btn"
+                  onClick={handleMicrophoneToggle} 
+                  aria-label="Stop recording"
+                >
+                  STOP RECORDING
+                </button>
+              ) : (
+                <button 
+                  className={`sound-btn ${!speechSupported ? 'disabled' : ''}`}
+                  onClick={handleMicrophoneToggle} 
+                  aria-label="Start recording"
+                >
+                  <FaMicrophone />
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      ) : lowConfidenceFirstProduct ? (
+        // Case 2: First product has low confidence
+        <div className="no-products-wrapper">
+          <div className="no-products-message">
+            <h2>No strong matches found</h2>
+            <p>We couldn&apos;t confidently match your request, but here&apos;s one option you might like. Please try another description for better results.</p>
+          </div>
+          {firstApiProduct && (
+            <div className="suggested-product-card">
+              <div className="suggested-image">
+                {firstApiProduct.img ? (
+                  <img
+                    src={firstApiProduct.img}
+                    alt={firstApiProduct.title || 'Suggested product'}
+                    onError={(e) => {
+                      console.log('Suggested image failed to load, using fallback');
+                      e.target.src = steps[0].image;
+                    }}
+                  />
+                ) : (
+                  <div className="loading-container">
+                    <LoadingSpinner size="large" />
+                  </div>
+                )}
+              </div>
+              <div className="suggested-info">
+                <h3>{firstApiProduct.title || 'Suggested product'}</h3>
+                <p>{firstApiProduct.short_description || firstApiProduct.subtitle}</p>
+              </div>
             </div>
           )}
         </div>
+      ) : (
+        <>
+          {/* Main Content */}
+          <div className="main-content">
+            {/* Custom Shoe Image */}
+            <div className="shoe-display">
+              {isImageLoading || isApiLoading ? (
+                <div className="loading-container">
+                  <LoadingSpinner size="large" />
+                </div>
+              ) : currentImage ? (
+                <img 
+                  src={currentImage} 
+                  alt="Custom AeroSole Shoe" 
+                  className="shoe-image"
+                  onError={(e) => {
+                    console.log('Image failed to load, using fallback');
+                    e.target.src = steps[0].image; // Fallback to default image
+                  }}
+                />
+              ) : (
+                <div className="loading-container">
+                  <LoadingSpinner size="large" />
+                </div>
+              )}
+            </div>
 
-        {/* Feature Buttons - Hide during loading */}
-        {!isImageLoading && !isApiLoading && (
-          <div className="feature-buttons">
-            {firstProductEntities.map((entity, index) => (
-              <button key={index} className="feature-btn">
-                <span>{entity}</span>
-                <div className="btn-arrow">↗</div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Transcript/Description */}
-      <div className="transcript-section">
-        <p className="transcript-text">
-          {displayedText}
-          {isListening && (
-            <span className="typing-cursor">|</span>
-          )}
-        </p>
-        <div className="audio-controls">
-          <div className="sound-wave-icon">
-            {isPlaying || isListening ? (
-              <div className="wave-bars">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            ) : (
-              <div className="static-audio-bars">
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
-                <span></span>
+            {/* Feature Buttons - Hide during loading */}
+            {!isImageLoading && !isApiLoading && (
+              <div className="feature-buttons">
+                {firstProductEntities.map((entity, index) => (
+                  <button key={index} className="feature-btn">
+                    <span>{entity}</span>
+                    <div className="btn-arrow">↗</div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
-          {isListening ? (
-            <button 
-              className="stop-recording-btn"
-              onClick={handleMicrophoneToggle} 
-              aria-label="Stop recording"
-            >
-              STOP RECORDING
-            </button>
-          ) : (
-            <button 
-              className={`sound-btn ${!speechSupported ? 'disabled' : ''}`}
-              onClick={handleMicrophoneToggle} 
-              aria-label="Start recording"
-            >
-              <FaMicrophone />
-            </button>
-          )}
-        </div>
-      </div>
 
-      {/* Footer Bar */}
-      <div className="footer-bar">
-        {/* Left: Product Details */}
-        <div className="footer-left">
-          <div className="product-name">
-            {apiResult && apiResult.success 
-              ? (apiResult.result?.products?.[0]?.title || apiResult.product?.title || "Premium AeroSole Shoe")
-              : "Premium AeroSole Shoe"}
+          {/* Transcript/Description */}
+          <div className="transcript-section">
+            <p className="transcript-text">
+              {displayedText}
+              {isListening && (
+                <span className="typing-cursor">|</span>
+              )}
+            </p>
+            <div className="audio-controls">
+              <div className="sound-wave-icon">
+                {isPlaying || isListening ? (
+                  <div className="wave-bars">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                ) : (
+                  <div className="static-audio-bars">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                )}
+              </div>
+              {isListening ? (
+                <button 
+                  className="stop-recording-btn"
+                  onClick={handleMicrophoneToggle} 
+                  aria-label="Stop recording"
+                >
+                  STOP RECORDING
+                </button>
+              ) : (
+                <button 
+                  className={`sound-btn ${!speechSupported ? 'disabled' : ''}`}
+                  onClick={handleMicrophoneToggle} 
+                  aria-label="Start recording"
+                >
+                  <FaMicrophone />
+                </button>
+              )}
+            </div>
           </div>
-          <div className="product-price">
-            {apiResult && apiResult.success 
-              ? (apiResult.result?.products?.[0]?.price || apiResult.product?.price || "$95.00")
-              : "$95.00"}
-          </div>
-        </div>
-        
-        {/* Center: Action Buttons */}
-        <div className="footer-center">
-          <button className="action-btn" onClick={handleEditDesign}>
-            EDIT THIS DESIGN
-          </button>
-          <button className="action-btn alternatives-btn">
-            <span className="btn-icon">↻</span>
-            SEE ALTERNATIVES
-          </button>
-        </div>
-        
-        {/* Right: Checkout Button */}
-        <div className="footer-right">
-          <button className="checkout-btn">
-            CHECKOUT
-          </button>
-        </div>
-      </div>
 
-      {/* Edit Design Loading Screen */}
-      <EditDesignLoading 
-        isVisible={showEditLoading} 
-        onComplete={handleEditLoadingComplete}
-      />
+          {/* Footer Bar */}
+          <div className="footer-bar">
+            {/* Left: Product Details */}
+            <div className="footer-left">
+              <div className="product-name">
+                {isImageLoading || isApiLoading
+                  ? ""
+                  : currentFooterProduct && currentFooterProduct.title
+                    ? currentFooterProduct.title
+                    : "Premium AeroSole Shoe"}
+              </div>
+              <div className="product-price">
+                {isImageLoading || isApiLoading
+                  ? ""
+                  : currentFooterProduct && currentFooterProduct.price
+                    ? currentFooterProduct.price
+                    : "$95.00"}
+              </div>
+            </div>
+            
+            {/* Center: Action Buttons */}
+            <div className="footer-center">
+              <button className="action-btn" onClick={handleEditDesign}>
+                EDIT THIS DESIGN
+              </button>
+              <button className="action-btn alternatives-btn">
+                <span className="btn-icon">↻</span>
+                SEE ALTERNATIVES
+              </button>
+            </div>
+            
+            {/* Right: Checkout Button */}
+            <div className="footer-right">
+              <button className="checkout-btn">
+                CHECKOUT
+              </button>
+            </div>
+          </div>
+
+          {/* Edit Design Loading Screen */}
+          <EditDesignLoading 
+            isVisible={showEditLoading} 
+            onComplete={handleEditLoadingComplete}
+          />
+        </>
+      )}
     </div>
   );
 };

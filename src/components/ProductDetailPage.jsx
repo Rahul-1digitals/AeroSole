@@ -62,7 +62,7 @@ export default function ProductDetailPage() {
         <aside className="pd-info" aria-label="Product configuration">
           <button
             className="back-editor"
-            onClick={() => navigate('/design')}
+            onClick={() => navigate('/design', { state: { fromProductDetail: true } })}
             aria-label="Back to editor"
           >
             <span>←</span>
