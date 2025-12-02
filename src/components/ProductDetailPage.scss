@@ -19,7 +19,7 @@
   letter-spacing: 0.06em;
   color: rgba(255, 255, 255, 1);
   white-space: nowrap;
-  z-index: 1;
+  z-index: 3;
   user-select: none;
   pointer-events: none;
 }
@@ -128,6 +128,42 @@
   transform: translate(320px, -30px) scale(0.8);
   opacity: 0.85;
   z-index: 2;
+}
+
+/* Single Image Container - New simplified layout */
+.single-image-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.product-image {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.2));
+}
+
+.product-image img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 450px;
+  max-height: 350px;
+  min-width: 300px;
+  min-height: 200px;
+  object-fit: contain;
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.product-image img:hover {
+  transform: scale(1.02);
 }
 
 /* Info (left) */
@@ -341,6 +377,13 @@
     max-height: 230px;
   }
   
+  .product-image img {
+    max-width: 380px;
+    max-height: 300px;
+    min-width: 250px;
+    min-height: 180px;
+  }
+  
   /* Maintain reversed V-shape on smaller screens */
   .v-item.center { transform: translateY(40px) scale(1); }
   .v-item.left { transform: translate(-280px, -25px) scale(0.8); }
@@ -366,6 +409,13 @@
   .v-item img {
     max-width: 300px;
     max-height: 200px;
+  }
+  
+  .product-image img {
+    max-width: 320px;
+    max-height: 250px;
+    min-width: 220px;
+    min-height: 160px;
   }
   
   /* Maintain reversed V-shape */
@@ -423,6 +473,17 @@
     max-height: 180px;
   }
   
+  .product-image img {
+    max-width: 280px;
+    max-height: 220px;
+    min-width: 200px;
+    min-height: 140px;
+  }
+  
+  .single-image-container {
+    padding: 10px;
+  }
+  
   /* Maintain reversed V-shape on mobile */
   .v-item.center { transform: translateY(30px) scale(1); }
   .v-item.left { transform: translate(-180px, -15px) scale(0.7); }
@@ -469,6 +530,17 @@
   .v-item img {
     max-width: 220px;
     max-height: 150px;
+  }
+  
+  .product-image img {
+    max-width: 240px;
+    max-height: 180px;
+    min-width: 180px;
+    min-height: 120px;
+  }
+  
+  .single-image-container {
+    padding: 5px;
   }
   
   /* Maintain reversed V-shape on small mobile */

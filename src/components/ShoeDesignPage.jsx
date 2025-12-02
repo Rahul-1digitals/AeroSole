@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
-import { FaFilter, FaPalette, FaGem, FaRedo, FaUpload, FaMicrophone } from 'react-icons/fa';
+import LoadingSpinner from './LoadingSpinner';
+import { FaFilter, FaPalette, FaGem, FaRedo, FaUpload, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from 'react-icons/fa';
+import { searchProducts } from '../services/api';
 import './ShoeDesignPage.scss';
 
 const ShoeDesignPage = () => {
   const [selectedDesign, setSelectedDesign] = useState(1);
   const navigate = useNavigate();
+  const location = useLocation();
   const [variationStrength, setVariationStrength] = useState(50);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -17,26 +20,173 @@ const ShoeDesignPage = () => {
     return saved ? JSON.parse(saved) : false;
   });
 
-  const baseDesigns = [
-    { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
-    { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
-    { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
-    { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
-  ];
+  // Speech recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [designText, setDesignText] = useState('');
+  
+  // State for dynamic designs that can be updated
+  const [currentDesigns, setCurrentDesigns] = useState([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  
+  // Refs for speech recognition
+  const recognitionRef = useRef(null);
+  const accumulatedTextRef = useRef('');
+
+  // Memoize apiProducts to prevent infinite re-renders
+  const apiProducts = useMemo(() => {
+    return location.state?.products || [];
+  }, [location.state?.products]);
+  
+  // Initialize designs only once on component mount
+  useEffect(() => {
+    if (!isInitialized) {
+      let initialDesigns;
+      
+      // FIRST check apiProducts (from Edit Design navigation) - highest priority
+      if (apiProducts.length > 0) {
+        initialDesigns = apiProducts.map((product, index) => ({
+          id: index + 1,
+          name: `DESIGN ${index + 1}`,
+          image: product.img || `/images/design${index + 1}.png`,
+          leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+          price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+          title: `Design ${index + 1}`,
+          description: product.short_description
+        }));
+        console.log('ShoeDesignPage - Using apiProducts from Edit Design:', initialDesigns);
+      }
+      
+      // If no apiProducts, then check localStorage
+      if (!initialDesigns) {
+        const savedDesigns = localStorage.getItem('shoeDesigns');
+        if (savedDesigns) {
+          try {
+            const parsedDesigns = JSON.parse(savedDesigns);
+            // Validate that it's a proper array with design objects
+            if (Array.isArray(parsedDesigns) && parsedDesigns.length > 0 && parsedDesigns[0].image) {
+              initialDesigns = parsedDesigns;
+              console.log('ShoeDesignPage - Restored designs from localStorage:', initialDesigns);
+            }
+          } catch (error) {
+            console.log('Error parsing saved designs, will use fallback');
+          }
+        }
+      }
+      
+      // Final fallback to static defaults
+      if (!initialDesigns) {
+        initialDesigns = [
+          { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70', title: 'Design 1', description: 'Classic design' },
+          { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70', title: 'Design 2', description: 'Classic design' },
+          { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70', title: 'Design 3', description: 'Classic design' },
+          { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70', title: 'Design 4', description: 'Classic design' }
+        ];
+        console.log('ShoeDesignPage - Using default designs:', initialDesigns);
+      }
+      
+      setCurrentDesigns(initialDesigns);
+      setIsInitialized(true);
+    }
+  }, [apiProducts, isInitialized]);
 
   // Save state to sessionStorage whenever it changes
   useEffect(() => {
     sessionStorage.setItem('showLeopardVariants', JSON.stringify(showLeopardVariants));
   }, [showLeopardVariants]);
 
-  // Get current designs based on leopard variant state
-  const designs = baseDesigns.map(design => ({
-    ...design,
-    image: showLeopardVariants ? design.leopardImage : design.image
-  }));
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        accumulatedTextRef.current = '';
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          accumulatedTextRef.current += finalTranscript;
+        }
+        
+        // Update text area with live transcription
+        setDesignText(accumulatedTextRef.current + interimTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        // Keep the accumulated text in the text area (no API call)
+        setDesignText(accumulatedTextRef.current);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // Get current designs based on leopard variant state (memoized to prevent unnecessary re-renders)
+  const designs = useMemo(() => {
+    return currentDesigns.map(design => ({
+      ...design,
+      image: showLeopardVariants ? design.leopardImage : design.image
+    }));
+  }, [currentDesigns, showLeopardVariants]);
 
   const handleDesignSelect = (designId) => {
     setSelectedDesign(designId);
+  };
+
+  // Toggle microphone recording
+  const handleMicrophoneToggle = () => {
+    if (!speechSupported) {
+      console.log('Speech recognition not supported');
+      return;
+    }
+
+    if (isListening) {
+      // Stop recording
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    } else {
+      // Start recording
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+        }
+      }
+    }
   };
 
   const handleImageUpload = (event) => {
@@ -50,16 +200,80 @@ const ShoeDesignPage = () => {
     }
   };
 
-  const handleGenerate = () => {
-    console.log('Generating design with:', { selectedDesign, variationStrength, uploadedImage });
-    // Toggle between regular and leopard variants
-    setShowLeopardVariants(!showLeopardVariants);
+  const handleGenerate = async () => {
+    if (!designText.trim()) {
+      alert('Please enter a design description or use the microphone');
+      return;
+    }
+
+    setIsGenerating(true);
+    setIsImageLoading(true);
+    console.log('ShoeDesignPage - Starting generation, loading states set to true');
+
+    try {
+      console.log('Generating design with text:', designText);
+      const apiResult = await searchProducts(designText);
+      console.log('API result received:', apiResult);
+      
+      if (apiResult.success && apiResult.allProducts && apiResult.allProducts.length > 0) {
+        // Update current designs with new API response images
+        const updatedDesigns = apiResult.allProducts.map((product, index) => ({
+          id: index + 1,
+          name: `DESIGN ${index + 1}`,
+          image: product.img || `/images/design${index + 1}.png`,
+          leopardImage: product.img || `/images/design${index + 1}_lepoard.png`,
+          price: product.price ? product.price.match(/\$[\d.]+/g)?.pop() || '$70' : '$70',
+          title: `Design ${index + 1}`,
+          description: product.short_description
+        }));
+        
+        // Update the designs state to show new images
+        setCurrentDesigns(updatedDesigns);
+        console.log('Updated designs with new API images:', updatedDesigns);
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('shoeDesigns', JSON.stringify(updatedDesigns));
+        console.log('ShoeDesignPage - Saved designs to localStorage:', updatedDesigns);
+        
+        // Clear the text field after successful generation
+        setDesignText('');
+        
+        // Reset image loading after successful update
+        setTimeout(() => {
+          setIsImageLoading(false);
+          console.log('ShoeDesignPage - Image loading reset to false after successful generation');
+        }, 200);
+      } else {
+        alert('No products found for your search. Please try a different description.');
+        setIsImageLoading(false);
+      }
+    } catch (error) {
+      console.error('Error generating design:', error);
+      alert('Error generating design. Please try again.');
+      setIsImageLoading(false);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleReset = () => {
-    // Reset to original designs
+    // Reset to original default designs
+    const defaultDesigns = [
+      { id: 1, name: 'DESIGN 1', image: '/images/design1.png', leopardImage: '/images/design1_lepoard.png', price: '$70' },
+      { id: 2, name: 'DESIGN 2', image: '/images/design2.png', leopardImage: '/images/design2_lepoard.png', price: '$70' },
+      { id: 3, name: 'DESIGN 3', image: '/images/design3.png', leopardImage: '/images/design3_lepoard.png', price: '$70' },
+      { id: 4, name: 'DESIGN 4', image: '/images/design4.png', leopardImage: '/images/design4_lepoard.png', price: '$70' }
+    ];
+    
+    setCurrentDesigns(defaultDesigns);
     setShowLeopardVariants(false);
-    console.log('Reset to original designs');
+    setDesignText('');
+    setIsImageLoading(false);
+    setIsGenerating(false);
+    
+    // Clear localStorage when resetting to defaults
+    localStorage.removeItem('shoeDesigns');
+    console.log('ShoeDesignPage - Cleared localStorage and reset to default designs');
   };
 
   const handlePrevSlide = () => {
@@ -132,40 +346,47 @@ const ShoeDesignPage = () => {
                   {designs.slice(startIndex, startIndex + 2).map((design) => (
                     <div 
                       key={design.id}
-                      className={`carousel-slide ${selectedDesign === design.id ? 'active' : ''}`}
+                      className={`carousel-slide ${selectedDesign === design.id ? 'active' : ''} ${isImageLoading ? 'loading' : ''}`}
                       onClick={() => handleDesignSelect(design.id)}
                     >
-                      <div className="design-info">
-                        <h3>{design.name}</h3>
-                        <button
-                          className="shop-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const baseKey = `design${design.id}`;
-                            const key = showLeopardVariants ? `${baseKey}_lepoard` : baseKey;
-                            const item = {
-                              id: key,
-                              title: 'OLD SKOOL',
-                              build: showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white',
-                              price: design.price,
-                              images: [
-                                `/images/${baseKey}/${key}_item1.png`,
-                                `/images/${baseKey}/${key}_item2.png`,
-                                `/images/${baseKey}/${key}_item3.png`,
-                              ],
-                              video: `/videos/${baseKey}/${key}_video.mp4`,
-                              sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
-                            };
-                            navigate(`/product/${key}`, { state: { item } });
-                          }}
-                          aria-label={`Shop ${design.name}`}
-                        >
-                          SHOP NOW FROM {design.price}
-                        </button>
-                      </div>
-                      <div className="shoe-image">
-                        <img src={design.image} alt={design.name} />
-                      </div>
+                      {isImageLoading ? (
+                        <div className="loading-container">
+                          <LoadingSpinner size="large" />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="design-info">
+                            <h3>{design.name}</h3>
+                            <button
+                              className="shop-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const item = {
+                                  id: `design${design.id}`,
+                                  title: design.title || 'OLD SKOOL',
+                                  build: design.description || (showLeopardVariants ? 'Leopard pop brown / true white' : 'Classic design / true white'),
+                                  price: design.price,
+                                  mainImage: design.image, // Pass the current displayed image
+                                  description: design.description,
+                                  sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
+                                };
+                                navigate(`/product/design${design.id}`, { state: { item } });
+                              }}
+                              aria-label={`Shop ${design.name}`}
+                            >
+                              SHOP NOW FROM {design.price}
+                            </button>
+                          </div>
+                          <div className="shoe-image">
+                            <img 
+                              src={design.image} 
+                              alt={design.name}
+                              onLoad={() => setIsImageLoading(false)}
+                              onError={() => setIsImageLoading(false)}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -238,11 +459,19 @@ const ShoeDesignPage = () => {
           <div className="footer-section bottom-left">
             <span className="section-label">Take your design even further</span>
             <div className="input-with-mic">
-              <FaMicrophone className="mic-icon" />
-              <input 
-                type="text" 
-                placeholder="insert example here"
+              <button 
+                className={`mic-button ${isListening ? 'listening' : ''}`}
+                onClick={handleMicrophoneToggle}
+                title={isListening ? "Stop recording" : "Start recording"}
+              >
+                {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
+              </button>
+              <textarea 
+                value={designText}
+                onChange={(e) => setDesignText(e.target.value)}
+                placeholder="Describe your design... (e.g., 'show me a formal shoe', 'black sneakers with white soles', 'waterproof boots for winter')"
                 className="design-input"
+                rows="2"
               />
             </div>
           </div>
@@ -264,8 +493,19 @@ const ShoeDesignPage = () => {
                 </label>
               </div>
               
-              <button className="generate-btn" onClick={handleGenerate}>
-                GENERATE
+              <button 
+                className="generate-btn" 
+                onClick={handleGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <>
+                    <LoadingSpinner size="extra-small" />
+                    <span style={{ marginLeft: '8px' }}>GENERATING...</span>
+                  </>
+                ) : (
+                  'GENERATE'
+                )}
               </button>
             </div>
           </div>

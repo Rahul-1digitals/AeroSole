@@ -15,10 +15,10 @@ const HeroSection = ({ onShowCustomResult }) => {
     setShowAIRecorder(false);
   };
 
-  const handleAIRecorderComplete = () => {
-    // After voice recording is complete, show the custom result page immediately
+  const handleAIRecorderComplete = (apiResult) => {
+    // After voice recording is complete, show the custom result page with API data
     if (onShowCustomResult) {
-      onShowCustomResult();
+      onShowCustomResult(apiResult);
     }
   };
 

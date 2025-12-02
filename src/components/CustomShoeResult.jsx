@@ -1,19 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaMicrophone } from 'react-icons/fa';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { FaTimes, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Navbar from './Navbar';
 import EditDesignLoading from './EditDesignLoading';
+import LoadingSpinner from './LoadingSpinner';
+import { searchProducts } from '../services/api';
 import './CustomShoeResult.scss';
 
-const CustomShoeResult = ({ onClose, onBack }) => {
+const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [currentImage, setCurrentImage] = useState('/images/custom-shoe-leopard.png');
+  const [currentImage, setCurrentImage] = useState('');
   const [showEditLoading, setShowEditLoading] = useState(false);
+  const [apiProcessed, setApiProcessed] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  
+  // Speech recognition states
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+  const [interimText, setInterimText] = useState('');
+  const [allProducts, setAllProducts] = useState([]);
+  
+  // Refs for speech recognition
+  const recognitionRef = useRef(null);
+  const accumulatedTextRef = useRef('');
 
   const steps = [
     {
@@ -34,11 +49,247 @@ const CustomShoeResult = ({ onClose, onBack }) => {
   ];
 
   useEffect(() => {
-    // Fade in immediately when component mounts
-    setIsVisible(true);
-    // Set initial text
-    setDisplayedText(steps[0].text);
+    // Add a small delay before fade in to prevent flickering
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 100); // Small delay for smooth appearance
+    
+    return () => clearTimeout(timer);
   }, []);
+
+  // Set initial content - show user query immediately if available
+  useEffect(() => {
+    if (apiResult && apiResult.user_query) {
+      // Show user's speech text immediately
+      setDisplayedText(apiResult.user_query);
+    } else if (!apiResult) {
+      // Default content if no API result
+      setCurrentImage(steps[0].image);
+      setDisplayedText(steps[0].text);
+      setIsImageLoading(false);
+      setIsApiLoading(false);
+    }
+  }, [apiResult]);
+
+  // Optimized API result processing (for initial page load with existing apiResult)
+  useEffect(() => {
+    if (!apiResult || apiProcessed) return;
+    
+    // Only process if this is an initial page load, not from speech recognition
+    if (!isListening && !isImageLoading && !isApiLoading) {
+      setIsApiLoading(true);
+      console.log('CustomShoeResult - API loading set to true for initial processing');
+    }
+    
+    if (apiResult.success) {
+      // Handle new API response structure
+      if (apiResult.result?.products) {
+        const products = apiResult.result.products;
+        const firstProduct = products[0];
+        
+        // Set image and text from first product
+        if (firstProduct) {
+          if (!apiResult.user_query) {
+            setDisplayedText(firstProduct.short_description || firstProduct.title || steps[0].text);
+          }
+          if (firstProduct.img) {
+            setIsImageLoading(true);
+            console.log('CustomShoeResult - Image loading set to true for new image');
+            // Use setTimeout to ensure loading state is rendered before setting image
+            setTimeout(() => {
+              setCurrentImage(firstProduct.img.trim() || steps[0].image);
+              console.log('CustomShoeResult - Image URL set after loading state');
+            }, 50);
+            // Reset image loading after showing the loading animation
+            setTimeout(() => {
+              setIsImageLoading(false);
+              console.log('CustomShoeResult - Image loading reset to false');
+            }, 1200);
+          } else {
+            // No image in API result, use default and don't show loading
+            setCurrentImage(steps[0].image);
+            setIsImageLoading(false);
+            console.log('CustomShoeResult - No image in API result, using default');
+          }
+        }
+        
+        // Store products immediately
+        setAllProducts(products);
+        
+      } else if (apiResult.product) {
+        // Handle old API response structure
+        const product = apiResult.product;
+        if (!apiResult.user_query) {
+          setDisplayedText(product.short_description || product.title || steps[0].text);
+        }
+        if (product.img?.trim()) {
+          setIsImageLoading(true);
+          console.log('CustomShoeResult - Image loading set to true for old API structure');
+          // Use setTimeout to ensure loading state is rendered before setting image
+          setTimeout(() => {
+            setCurrentImage(product.img.trim() || steps[0].image);
+            console.log('CustomShoeResult - Image URL set after loading state (old API)');
+          }, 50);
+          // Reset image loading after showing the loading animation
+          setTimeout(() => {
+            setIsImageLoading(false);
+            console.log('CustomShoeResult - Image loading reset to false (old API)');
+          }, 1200);
+        } else {
+          // No image in old API result, use default and don't show loading
+          setCurrentImage(steps[0].image);
+          setIsImageLoading(false);
+          console.log('CustomShoeResult - No image in old API result, using default');
+        }
+        if (apiResult.allProducts) {
+          setAllProducts(apiResult.allProducts);
+        }
+      }
+    } else {
+      // Failed API result
+      setDisplayedText(steps[0].text);
+      setCurrentImage(steps[0].image);
+      setIsImageLoading(false);
+    }
+    
+    setApiProcessed(true);
+    
+    // Only reset loading states if this useEffect set them (for initial processing)
+    if (!isListening) {
+      setIsApiLoading(false);
+      console.log('CustomShoeResult - API loading reset to false, initial processing complete');
+    }
+  }, [apiResult, apiProcessed, isListening]);
+
+  // Additional useEffect to monitor image changes
+  useEffect(() => {
+    console.log('Current image updated to:', currentImage); // Debug log
+    console.log('API processed flag:', apiProcessed); // Debug log
+  }, [currentImage]);
+
+  // Debug useEffect to monitor loading states
+  useEffect(() => {
+    console.log('Loading states - isImageLoading:', isImageLoading, 'isApiLoading:', isApiLoading);
+  }, [isImageLoading, isApiLoading]);
+
+  // Debug useEffect to track component re-renders
+  useEffect(() => {
+    console.log('CustomShoeResult component rendered/re-rendered');
+    console.log('apiResult prop:', apiResult);
+  });
+
+  // Initialize speech recognition (only once)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (!SpeechRecognition) {
+        setSpeechSupported(false);
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        accumulatedTextRef.current = '';
+        console.log('Speech recognition started in CustomShoeResult');
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript) {
+          accumulatedTextRef.current += finalTranscript;
+          console.log('Final transcript received:', finalTranscript);
+          console.log('Accumulated text:', accumulatedTextRef.current);
+        }
+        
+        // Update display text with accumulated + interim text (live transcription)
+        setDisplayedText(accumulatedTextRef.current + interimTranscript);
+        setInterimText(interimTranscript);
+      };
+
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = async () => {
+        setIsListening(false);
+        setInterimText('');
+        
+        const finalText = accumulatedTextRef.current.trim();
+        console.log('Speech recognition ended. Final text:', finalText);
+        
+        if (finalText) {
+          // Set loading states when API call starts
+          setIsImageLoading(true);
+          setIsApiLoading(true);
+          console.log('CustomShoeResult - Loading states set to true before API call');
+          
+          try {
+            console.log('Calling API with text:', finalText);
+            const newApiResult = await searchProducts(finalText);
+            console.log('New API result received:', newApiResult);
+            
+            if (newApiResult.success && newApiResult.product) {
+              // Update the current display with new results
+              setDisplayedText(finalText);
+              setCurrentImage(newApiResult.product.img || currentImage);
+              
+              // Update all products for Edit Design
+              if (newApiResult.allProducts) {
+                setAllProducts(newApiResult.allProducts);
+              }
+              
+              // Reset loading states after successful API response
+              setTimeout(() => {
+                setIsImageLoading(false);
+                setIsApiLoading(false);
+                console.log('CustomShoeResult - Loading states reset after API response');
+              }, 1000);
+            } else {
+              // Reset loading states for failed API response
+              setIsImageLoading(false);
+              setIsApiLoading(false);
+              console.log('CustomShoeResult - Loading states reset after failed API response');
+            }
+          } catch (error) {
+            console.error('Error calling API:', error);
+            // Reset loading states on API error
+            setIsImageLoading(false);
+            setIsApiLoading(false);
+            console.log('CustomShoeResult - Loading states reset after API error');
+          }
+        }
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []); // Remove currentImage dependency
+
+  // Cleanup speech recognition on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current && isListening) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, [isListening]);
 
   const typeText = (text) => {
     setDisplayedText('');
@@ -92,15 +343,63 @@ const CustomShoeResult = ({ onClose, onBack }) => {
     }, 500 + (nextStepData.text.length * 50) + 500); // typing delay + text length + buffer
   };
 
+  // Toggle microphone recording
+  const handleMicrophoneToggle = () => {
+    if (!speechSupported) {
+      console.log('Speech recognition not supported');
+      return;
+    }
+
+    if (isListening) {
+      // Stop recording
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    } else {
+      // Start recording - clear previous text
+      setDisplayedText(''); // Clear for live transcription
+      setInterimText(''); // Clear any interim text
+      
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+        }
+      }
+    }
+  };
+
   const handleEditDesign = () => {
+    // Show loading animation first
     setShowEditLoading(true);
   };
 
   const handleEditLoadingComplete = () => {
     setShowEditLoading(false);
-    // Navigate to the shoe design page
-    navigate('/design');
+    // Navigate to design page with all products
+    navigate('/design', { 
+      state: { 
+        products: allProducts.slice(0, 4) // Show products 1-4 (first four products)
+      } 
+    });
   };
+
+  // Memoized entity extraction for better performance (limit to 5 entities)
+  const firstProductEntities = useMemo(() => {
+    if (allProducts && allProducts.length > 0) {
+      const firstProduct = allProducts[0];
+      if (firstProduct.entities && Array.isArray(firstProduct.entities)) {
+        // Extract only the entity names from the first product and limit to 5
+        return firstProduct.entities
+          .map(entityObj => entityObj.entity)
+          .slice(0, 5); // Show maximum 5 entities
+      }
+    }
+    
+    // Fallback to static features if no API data
+    return steps[currentStep].features;
+  }, [allProducts, currentStep]);
 
   return (
     <div className={`custom-shoe-result ${isVisible ? 'fade-in' : 'fade-out'}`}>
@@ -119,32 +418,51 @@ const CustomShoeResult = ({ onClose, onBack }) => {
       <div className="main-content">
         {/* Custom Shoe Image */}
         <div className="shoe-display">
-          <img 
-            src={currentImage} 
-            alt="Custom AeroSole Shoe" 
-            className="shoe-image"
-          />
+          {isImageLoading || isApiLoading ? (
+            <div className="loading-container">
+              <LoadingSpinner size="large" />
+            </div>
+          ) : currentImage ? (
+            <img 
+              src={currentImage} 
+              alt="Custom AeroSole Shoe" 
+              className="shoe-image"
+              onError={(e) => {
+                console.log('Image failed to load, using fallback');
+                e.target.src = steps[0].image; // Fallback to default image
+              }}
+            />
+          ) : (
+            <div className="loading-container">
+              <LoadingSpinner size="large" />
+            </div>
+          )}
         </div>
 
-        {/* Feature Buttons */}
-        <div className="feature-buttons">
-          {steps[currentStep].features.map((feature, index) => (
-            <button key={index} className="feature-btn">
-              <span>{feature}</span>
-              <div className="btn-arrow">↗</div>
-            </button>
-          ))}
-        </div>
+        {/* Feature Buttons - Hide during loading */}
+        {!isImageLoading && !isApiLoading && (
+          <div className="feature-buttons">
+            {firstProductEntities.map((entity, index) => (
+              <button key={index} className="feature-btn">
+                <span>{entity}</span>
+                <div className="btn-arrow">↗</div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Transcript/Description */}
       <div className="transcript-section">
         <p className="transcript-text">
           {displayedText}
+          {isListening && (
+            <span className="typing-cursor">|</span>
+          )}
         </p>
         <div className="audio-controls">
           <div className="sound-wave-icon">
-            {isPlaying ? (
+            {isPlaying || isListening ? (
               <div className="wave-bars">
                 <span></span>
                 <span></span>
@@ -162,13 +480,23 @@ const CustomShoeResult = ({ onClose, onBack }) => {
               </div>
             )}
           </div>
-          <button 
-            className={`sound-btn ${currentStep >= steps.length - 1 ? 'non-functional' : ''}`}
-            onClick={currentStep >= steps.length - 1 ? undefined : handlePlayAudio} 
-            aria-label="Play audio"
-          >
-            <FaMicrophone />
-          </button>
+          {isListening ? (
+            <button 
+              className="stop-recording-btn"
+              onClick={handleMicrophoneToggle} 
+              aria-label="Stop recording"
+            >
+              STOP RECORDING
+            </button>
+          ) : (
+            <button 
+              className={`sound-btn ${!speechSupported ? 'disabled' : ''}`}
+              onClick={handleMicrophoneToggle} 
+              aria-label="Start recording"
+            >
+              <FaMicrophone />
+            </button>
+          )}
         </div>
       </div>
 
@@ -176,8 +504,16 @@ const CustomShoeResult = ({ onClose, onBack }) => {
       <div className="footer-bar">
         {/* Left: Product Details */}
         <div className="footer-left">
-          <div className="product-name">Premium AeroSole Shoe</div>
-          <div className="product-price">$95.00</div>
+          <div className="product-name">
+            {apiResult && apiResult.success 
+              ? (apiResult.result?.products?.[0]?.title || apiResult.product?.title || "Premium AeroSole Shoe")
+              : "Premium AeroSole Shoe"}
+          </div>
+          <div className="product-price">
+            {apiResult && apiResult.success 
+              ? (apiResult.result?.products?.[0]?.price || apiResult.product?.price || "$95.00")
+              : "$95.00"}
+          </div>
         </div>
         
         {/* Center: Action Buttons */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { searchProducts } from '../services/api';
 import './AIVoiceRecorder.scss';
 
 const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
@@ -8,8 +9,9 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
-  
   const recognitionRef = useRef(null);
+  const accumulatedTextRef = useRef('');
+  const completedRef = useRef(false); // Flag to prevent duplicate onComplete calls
   
   // Initialize speech recognition
   useEffect(() => {
@@ -29,6 +31,8 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
       recognition.onstart = () => {
         setIsListening(true);
         setIsRecording(true);
+        accumulatedTextRef.current = ''; // Reset accumulated text
+        console.log('Speech recognition started');
       };
 
       recognition.onresult = (event) => {
@@ -44,8 +48,21 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
           }
         }
 
-        setDisplayedText(prev => prev + finalTranscript);
+        // Update accumulated text with final transcript
+        if (finalTranscript) {
+          accumulatedTextRef.current += finalTranscript;
+          console.log('Final transcript received:', finalTranscript);
+          console.log('Accumulated text:', accumulatedTextRef.current);
+        }
+        
+        // Update display text and interim text
+        setDisplayedText(accumulatedTextRef.current + interimTranscript);
         setInterimText(interimTranscript);
+        
+        // Debug log for interim text
+        if (interimTranscript) {
+          console.log('Interim transcript:', interimTranscript);
+        }
       };
 
       recognition.onerror = (event) => {
@@ -54,70 +71,165 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
         setIsRecording(false);
       };
 
-      recognition.onend = () => {
+      recognition.onend = async () => {
         setIsListening(false);
         setIsRecording(false);
         setInterimText('');
         
-        // Auto-complete after speech ends
-        setTimeout(() => {
-          if (onComplete) {
-            onComplete();
+        // Prevent duplicate calls
+        if (completedRef.current) {
+          console.log('onComplete already called, skipping');
+          return;
+        }
+        
+        // Use accumulated text from ref for API call
+        const finalText = accumulatedTextRef.current.trim();
+        console.log('Speech recognition ended. Final accumulated text:', finalText);
+        
+        // Show processing state
+        setDisplayedText('Processing your request...');
+        setInterimText('');
+        
+        // Call API with the transcribed text
+        if (finalText) {
+          try {
+            console.log('Calling API with text:', finalText); // Debug log
+            const apiResult = await searchProducts(finalText);
+            console.log('API result received:', apiResult); // Debug log
+            
+            // Mark as completed and pass result
+            completedRef.current = true;
+            if (onComplete) {
+              onComplete(apiResult);
+            }
+          } catch (error) {
+            console.error('Error calling API:', error);
+            // Mark as completed and pass error
+            completedRef.current = true;
+            if (onComplete) {
+              onComplete({ success: false, error: error.message });
+            }
           }
-          
+        } else {
+          console.log('No speech text detected'); // Debug log
+          // Mark as completed and pass no speech error
+          completedRef.current = true;
+          if (onComplete) {
+            onComplete({ success: false, error: 'No speech detected' });
+          }
+        }
+        
+        // Add a small delay before starting fade out to prevent flickering
+        setTimeout(() => {
           setIsFadingOut(true);
           
           setTimeout(() => {
             onClose();
-          }, 1000);
-        }, 1000);
+          }, 800); // Reduced from 1000ms for smoother transition
+        }, 200); // Small delay to prevent immediate flickering
       };
 
       recognitionRef.current = recognition;
     }
-  }, [onComplete, onClose]);
+  }, []); // Remove dependencies to prevent re-initialization
 
   // Handle visibility changes
   useEffect(() => {
     if (!isVisible) {
+      // Force stop recognition immediately when becoming invisible
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+          console.log('Recognition stopped due to visibility change');
+        } catch (error) {
+          console.error('Error stopping recognition on visibility change:', error);
+        }
+      }
+      
+      // Reset all states immediately
       setDisplayedText('');
       setInterimText('');
       setIsRecording(false);
       setIsListening(false);
       setIsFadingOut(false);
-      
-      // Stop recognition if it's running
-      if (recognitionRef.current && isListening) {
-        recognitionRef.current.stop();
-      }
+      accumulatedTextRef.current = '';
+      completedRef.current = false;
       return;
     }
 
+    // Reset completion flag when becoming visible
+    completedRef.current = false;
+
     // Start speech recognition when component becomes visible
-    if (speechSupported && recognitionRef.current) {
+    if (speechSupported && recognitionRef.current && !isListening && !completedRef.current) {
       try {
+        console.log('Starting speech recognition...');
         recognitionRef.current.start();
       } catch (error) {
         console.error('Error starting speech recognition:', error);
+        // If already started, just continue
+        if (error.name !== 'InvalidStateError') {
+          console.error('Unexpected speech recognition error:', error);
+        }
       }
     }
-  }, [isVisible, speechSupported, isListening]);
+  }, [isVisible, speechSupported]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (recognitionRef.current && isListening) {
-        recognitionRef.current.stop();
+      // Force stop recognition on unmount regardless of state
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+          console.log('Recognition stopped on component unmount');
+        } catch (error) {
+          console.error('Error stopping recognition on unmount:', error);
+        }
       }
     };
-  }, [isListening]);
+  }, []); // No dependencies to ensure it always runs on unmount
 
   // Manual stop function
   const handleStopRecording = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+        // Immediately update states to prevent race conditions
+        setIsListening(false);
+        setIsRecording(false);
+        console.log('Manual stop recording triggered');
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
     }
   };
+
+  // Enhanced close function that ensures cleanup
+  const handleClose = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+        // Immediately update states
+        setIsListening(false);
+        setIsRecording(false);
+        setIsFadingOut(false);
+        console.log('AI recorder closed, recognition stopped');
+      } catch (error) {
+        console.error('Error stopping recognition on close:', error);
+      }
+    }
+    
+    // Reset all states
+    setDisplayedText('');
+    setInterimText('');
+    accumulatedTextRef.current = '';
+    completedRef.current = false;
+    
+    // Call the original onClose
+    onClose();
+  };
+
 
   if (!isVisible) return null;
 
@@ -125,7 +237,7 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
     <div className={`ai-voice-overlay ${isFadingOut ? 'fade-out' : ''}`}>
       <div className="ai-voice-background"></div>
       
-      <button className="ai-voice-close" onClick={onClose} aria-label="Close">
+      <button className="ai-voice-close" onClick={handleClose} aria-label="Close">
         ×
       </button>
       
@@ -167,7 +279,7 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
           )}
           {isListening && (
             <>
-              <p className="ai-status-text">Listening... Speak now</p>
+              <p className="ai-status-text">Listening... Click stop when done</p>
               <button className="stop-recording-btn" onClick={handleStopRecording}>
                 Stop Recording
               </button>
