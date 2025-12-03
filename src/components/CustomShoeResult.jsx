@@ -21,6 +21,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [noProductsFromVoice, setNoProductsFromVoice] = useState(false);
   const [hasVoiceSearch, setHasVoiceSearch] = useState(false);
+  const [stackedEntities, setStackedEntities] = useState([]);
   
   // Speech recognition states
   const [isListening, setIsListening] = useState(false);
@@ -145,6 +146,14 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
         
         // Store products immediately
         setAllProducts(products);
+        
+        // Initialize stacked entities with first product's entities (only on initial load)
+        if (firstProduct && firstProduct.entities && Array.isArray(firstProduct.entities) && stackedEntities.length === 0) {
+          // Entities are now strings, not objects
+          const initialEntities = firstProduct.entities; // Direct array of strings
+          setStackedEntities(initialEntities);
+          console.log('CustomShoeResult - Initialized stacked entities:', initialEntities);
+        }
         
       } else if (apiResult.product) {
         // Handle old API response structure
@@ -317,6 +326,23 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
                 setAllProducts(newApiResult.allProducts);
               }
               
+              // Add new entities to the stack (keep previous + add new)
+              if (internalProducts.length > 0 && internalProducts[0].entities && Array.isArray(internalProducts[0].entities)) {
+                // Entities are now strings, not objects - use directly
+                const newEntities = internalProducts[0].entities;
+                setStackedEntities(prevEntities => {
+                  // Keep previous entities and add new ones (avoid duplicates)
+                  const combined = [...prevEntities];
+                  newEntities.forEach(entity => {
+                    if (!combined.includes(entity)) {
+                      combined.push(entity);
+                    }
+                  });
+                  console.log('CustomShoeResult - Updated stacked entities:', combined);
+                  return combined;
+                });
+              }
+              
               // Reset loading states after successful API response
               setTimeout(() => {
                 setIsImageLoading(false);
@@ -459,21 +485,25 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
     });
   };
 
-  // Memoized entity extraction for better performance (limit to 5 entities)
-  const firstProductEntities = useMemo(() => {
-    if (allProducts && allProducts.length > 0) {
-      const firstProduct = allProducts[0];
+  // Stacked entities system - accumulate entities from each search
+  const displayedEntities = useMemo(() => {
+    // If we have stacked entities, show them
+    if (stackedEntities.length > 0) {
+      return stackedEntities;
+    }
+    
+    // Initial load: show first product entities from apiResult
+    if (apiResult && apiResult.result?.products && apiResult.result.products.length > 0) {
+      const firstProduct = apiResult.result.products[0];
       if (firstProduct.entities && Array.isArray(firstProduct.entities)) {
-        // Extract only the entity names from the first product and limit to 5
-        return firstProduct.entities
-          .map(entityObj => entityObj.entity)
-          .slice(0, 5); // Show maximum 5 entities
+        // Entities are now strings, not objects - return directly
+        return firstProduct.entities;
       }
     }
     
     // Fallback to static features if no API data
     return steps[currentStep].features;
-  }, [allProducts, currentStep]);
+  }, [stackedEntities, apiResult, currentStep]);
 
   return (
     <div className={`custom-shoe-result ${isVisible ? 'fade-in' : 'fade-out'}`}>
@@ -627,7 +657,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
             {/* Feature Buttons - Hide during loading */}
             {!isImageLoading && !isApiLoading && (
               <div className="feature-buttons">
-                {firstProductEntities.map((entity, index) => (
+                {displayedEntities.map((entity, index) => (
                   <button key={index} className="feature-btn">
                     <span>{entity}</span>
                     <div className="btn-arrow">↗</div>
