@@ -21,7 +21,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [noProductsFromVoice, setNoProductsFromVoice] = useState(false);
   const [hasVoiceSearch, setHasVoiceSearch] = useState(false);
-  const [stackedEntities, setStackedEntities] = useState([]);
+  const [currentEntities, setCurrentEntities] = useState([]);
   
   // Speech recognition states
   const [isListening, setIsListening] = useState(false);
@@ -147,12 +147,12 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
         // Store products immediately
         setAllProducts(products);
         
-        // Initialize stacked entities with first product's entities (only on initial load)
-        if (firstProduct && firstProduct.entities && Array.isArray(firstProduct.entities) && stackedEntities.length === 0) {
+        // Initialize entities with first product's entities (only on initial load)
+        if (firstProduct && firstProduct.entities && Array.isArray(firstProduct.entities) && currentEntities.length === 0) {
           // Entities are now strings, not objects
           const initialEntities = firstProduct.entities; // Direct array of strings
-          setStackedEntities(initialEntities);
-          console.log('CustomShoeResult - Initialized stacked entities:', initialEntities);
+          setCurrentEntities(initialEntities);
+          console.log('CustomShoeResult - Initialized entities:', initialEntities);
         }
         
       } else if (apiResult.product) {
@@ -326,21 +326,13 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
                 setAllProducts(newApiResult.allProducts);
               }
               
-              // Add new entities to the stack (keep previous + add new)
+              // Replace all entities with new response entities
               if (internalProducts.length > 0 && internalProducts[0].entities && Array.isArray(internalProducts[0].entities)) {
                 // Entities are now strings, not objects - use directly
                 const newEntities = internalProducts[0].entities;
-                setStackedEntities(prevEntities => {
-                  // Keep previous entities and add new ones (avoid duplicates)
-                  const combined = [...prevEntities];
-                  newEntities.forEach(entity => {
-                    if (!combined.includes(entity)) {
-                      combined.push(entity);
-                    }
-                  });
-                  console.log('CustomShoeResult - Updated stacked entities:', combined);
-                  return combined;
-                });
+                // Replace entire entity list with new response entities
+                setCurrentEntities(newEntities);
+                console.log('CustomShoeResult - Replaced entities with new response:', newEntities);
               }
               
               // Reset loading states after successful API response
@@ -485,11 +477,11 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
     });
   };
 
-  // Stacked entities system - accumulate entities from each search
+  // Entity display system - show current entities from latest response
   const displayedEntities = useMemo(() => {
-    // If we have stacked entities, show them
-    if (stackedEntities.length > 0) {
-      return stackedEntities;
+    // If we have current entities, show them
+    if (currentEntities.length > 0) {
+      return currentEntities;
     }
     
     // Initial load: show first product entities from apiResult
@@ -503,7 +495,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
     
     // Fallback to static features if no API data
     return steps[currentStep].features;
-  }, [stackedEntities, apiResult, currentStep]);
+  }, [currentEntities, apiResult, currentStep]);
 
   return (
     <div className={`custom-shoe-result ${isVisible ? 'fade-in' : 'fade-out'}`}>

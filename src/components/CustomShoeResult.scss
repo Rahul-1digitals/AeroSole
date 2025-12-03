@@ -128,6 +128,40 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: 50vh; // Limit height to 60% of viewport
+  overflow-y: auto; // Add scroll when content overflows
+  padding-right: 8px; // Space for scrollbar
+  
+  // Fade effect at bottom to indicate more content
+  &::after {
+    content: '';
+    position: sticky;
+    bottom: 0;
+    display: block;
+    height: 20px;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.9));
+    pointer-events: none;
+    margin-top: -20px;
+  }
+  
+  // Custom scrollbar styling
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 3px;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+  }
 
   .feature-btn {
     background: white;
@@ -415,6 +449,24 @@
     justify-content: center;
     margin-top: 24px;
     flex-wrap: wrap;
+    max-height: 40vh; // Limit height on mobile
+    overflow-y: auto; // Enable scroll on mobile
+    padding: 0 8px; // Padding for mobile
+    
+    // Mobile scrollbar styling
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 2px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 2px;
+    }
 
     .feature-btn {
       min-width: auto;
