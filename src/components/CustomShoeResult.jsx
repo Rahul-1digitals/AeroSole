@@ -64,17 +64,17 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const steps = [
     {
       text: "skate shoes in a nineties style with a leopard pattern",
-      image: "/images/custom-shoe-leopard.png",
+      image: "/aerosole/images/custom-shoe-leopard.png",
       features: ["Skateboard shoes", "Nineties style", "Leopard pattern"]
     },
     {
       text: "show me the black and white version",
-      image: "/images/custom-shoe-leopard-black-white.png",
+      image: "/aerosole/images/custom-shoe-leopard-black-white.png",
       features: ["Skateboard shoes", "Nineties style", "Leopard pattern", "Black & White"]
     },
     {
       text: "change the color theme to warm tones",
-      image: "/images/custom-shoe-leopard-warm.png",
+      image: "/aerosole/images/custom-shoe-leopard-warm.png",
       features: ["Skateboard shoes", "Nineties style", "Leopard pattern", "Black & White", "Warm Tones"]
     }
   ];

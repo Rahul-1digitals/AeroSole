@@ -3,11 +3,11 @@ import Slider from 'react-slick';
 import './CarouselSection.scss';
 
 const carouselVideos = [
-  { src: '/videos/carousel1.mp4', label: 'SKATEBOARDING' },
-  { src: '/videos/carousel2.mp4', label: 'BMX' },
-  { src: '/videos/carousel3.mp4', label: 'SURFING' },
-  { src: '/videos/carousel4.mp4', label: 'RUNNING' },
-  { src: '/videos/carousel5.mp4', label: 'CASUAL' },
+  { src: '/aerosole/videos/carousel1.mp4', label: 'SKATEBOARDING' },
+  { src: '/aerosole/videos/carousel2.mp4', label: 'BMX' },
+  { src: '/aerosole/videos/carousel3.mp4', label: 'SURFING' },
+  { src: '/aerosole/videos/carousel4.mp4', label: 'RUNNING' },
+  { src: '/aerosole/videos/carousel5.mp4', label: 'CASUAL' },
 ];
 
 const CarouselSection = () => {
