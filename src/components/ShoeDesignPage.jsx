@@ -344,7 +344,7 @@ const ShoeDesignPage = () => {
         if (
           firstProduct &&
           typeof firstProduct.confidence === 'number' &&
-          firstProduct.confidence < 60
+          firstProduct.confidence < 50
         ) {
           console.log('ShoeDesignPage - Generate returned low-confidence first product');
           setLowConfidenceProduct(firstProduct);

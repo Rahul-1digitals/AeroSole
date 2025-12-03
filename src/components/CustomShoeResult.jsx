@@ -39,7 +39,7 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
   const zeroProductsFromApi = !hasVoiceSearch && apiResult && apiResult.success && (productCount === 0 || productsArray.length === 0);
   const showZeroProducts = zeroProductsFromApi || noProductsFromVoice;
   const lowConfidenceFirstProduct = apiResult && apiResult.success && firstApiProduct &&
-    typeof firstApiProduct.confidence === 'number' && firstApiProduct.confidence < 60;
+    typeof firstApiProduct.confidence === 'number' && firstApiProduct.confidence < 50;
 
   // Determine which product to show in the footer (initial API result vs latest voice search)
   const currentFooterProduct = useMemo(() => {
@@ -574,6 +574,25 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
               <div className="suggested-info">
                 <h3>{firstApiProduct.title || 'Suggested product'}</h3>
                 <p>{firstApiProduct.short_description || firstApiProduct.subtitle}</p>
+                <button
+                  className="view-product-btn"
+                  type="button"
+                  onClick={() => {
+                    // Navigate to product detail page with the suggested product
+                    const item = {
+                      id: `suggested-${firstApiProduct.title || 'product'}`,
+                      title: firstApiProduct.title || 'Suggested Product',
+                      build: firstApiProduct.short_description || 'Custom build configuration',
+                      price: firstApiProduct.price || '$70.00',
+                      mainImage: firstApiProduct.img || '/images/design1.png',
+                      description: firstApiProduct.short_description,
+                      sizes: ['6', '6.5', '7', '7.5', '8', '8.5', '9', '9.5', '10', '10.5', '11'],
+                    };
+                    navigate(`/product/${item.id}`, { state: { item } });
+                  }}
+                >
+                  VIEW THIS PRODUCT
+                </button>
               </div>
             </div>
           )}
