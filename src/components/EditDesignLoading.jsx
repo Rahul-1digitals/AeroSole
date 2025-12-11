@@ -61,7 +61,7 @@ const EditDesignLoading = ({ isVisible, onComplete }) => {
   return (
     <div className={`edit-design-loading ${showContent ? 'fade-in' : 'fade-out'}`}>
       {/* Header Navigation */}
-      <Navbar />
+      {/* <Navbar /> */}
       
       {/* Main Content Section */}
       <div className="loading-content">

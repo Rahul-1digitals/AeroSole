@@ -12,6 +12,17 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
   const recognitionRef = useRef(null);
   const accumulatedTextRef = useRef('');
   const completedRef = useRef(false); // Flag to prevent duplicate onComplete calls
+  const isVisibleRef = useRef(false);
+  
+  // Track visibility changes
+  useEffect(() => {
+    isVisibleRef.current = isVisible;
+    if (isVisible) {
+      console.log('AIVoiceRecorder became visible');
+    } else {
+      console.log('AIVoiceRecorder became hidden');
+    }
+  }, [isVisible]);
   
   // Initialize speech recognition
   useEffect(() => {
@@ -175,20 +186,20 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
     }
   }, [isVisible, speechSupported]);
 
-  // Cleanup on unmount
+  // Cleanup speech recognition on unmount only
   useEffect(() => {
     return () => {
-      // Force stop recognition on unmount regardless of state
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-          console.log('Recognition stopped on component unmount');
-        } catch (error) {
-          console.error('Error stopping recognition on unmount:', error);
-        }
+        console.log('Cleaning up speech recognition on unmount');
+        recognitionRef.current.stop();
+        recognitionRef.current.onstart = null;
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current = null;
       }
     };
-  }, []); // No dependencies to ensure it always runs on unmount
+  }, []); // Only cleanup on actual unmount
 
   // Manual stop function
   const handleStopRecording = () => {
@@ -232,6 +243,8 @@ const AIVoiceRecorder = ({ isVisible, onClose, onComplete }) => {
 
 
   if (!isVisible) return null;
+
+  console.log('AIVoiceRecorder rendering with isVisible:', isVisible);
 
   return (
     <div className={`ai-voice-overlay ${isFadingOut ? 'fade-out' : ''}`}>

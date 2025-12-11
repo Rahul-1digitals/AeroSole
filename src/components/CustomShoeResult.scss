@@ -8,7 +8,7 @@
   background: #f5f5f5;
   z-index: 1000;
   display: grid;
-  grid-template-rows: auto auto 1fr auto auto; // navbar, title, main, transcript, footer
+  grid-template-rows: auto 1fr auto auto; // title, main, transcript, footer (no navbar)
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
   overflow-y: auto;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaTimes, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import Navbar from './Navbar';
 import EditDesignLoading from './EditDesignLoading';
 import LoadingSpinner from './LoadingSpinner';
 import { searchProducts } from '../services/api';
@@ -499,9 +498,6 @@ const CustomShoeResult = ({ onClose, onBack, apiResult }) => {
 
   return (
     <div className={`custom-shoe-result ${isVisible ? 'fade-in' : 'fade-out'}`}>
-      {/* Reuse existing Navbar */}
-      <Navbar />
-
       {/* Page Title with Close Button */}
       <div className="page-title">
         <h1>YOUR CUSTOM AEROSOLE</h1>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaSearch, FaUser, FaShoppingBag, FaMicrophone, FaBars, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import { useAIRecorder } from '../App';
 import './Navbar.scss';
 
 const NAV_PANEL_SECTIONS = {
@@ -9,25 +10,31 @@ const NAV_PANEL_SECTIONS = {
     { label: 'Customs', path: '/' },
   ],
   Women: [
-    { label: 'West End Store', path: '/' },
-    { label: 'Customs', path: '/' },
+    { label: 'Gifts for Her', path: '/' },
+    { label: 'New Arrivals', path: '/' },
+    { label: 'Best Sellers', path: '/' },
   ],
   Men: [
-    { label: 'West End Store', path: '/' },
-    { label: 'Customs', path: '/' },
+    { label: 'Gifts for Him', path: '/' },
+    { label: 'New Arrivals', path: '/' },
+    { label: 'Best Sellers', path: '/' },
   ],
   Kids: [
-    { label: 'West End Store', path: '/' },
-    { label: 'Customs', path: '/' },
+    { label: 'Gifts for Kids', path: '/' },
+    { label: 'New Arrivals', path: '/' },
+    { label: 'Best Sellers', path: '/' },
   ],
   Sale: [
-    { label: 'West End Store', path: '/' },
-    { label: 'Customs', path: '/' },
+    { label: 'Men', path: '/' },
+    { label: 'Women', path: '/' },
+    { label: 'Kids', path: '/' },
+    { label: 'All Sale', path: '/' },
   ],
 };
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const { openAIRecorder } = useAIRecorder();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCategory, setActiveCategory] = useState('New & Featured');
@@ -39,6 +46,15 @@ const Navbar = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen((prev) => !prev);
+  };
+
+  const handleSpeakToAI = () => {
+    openAIRecorder((apiResult) => {
+      // After voice recording is complete, navigate to custom shoe page with API data
+      if (apiResult && apiResult.success) {
+        navigate('/custom-shoe', { state: { apiResult } });
+      }
+    });
   };
 
   useEffect(() => {
@@ -94,7 +110,7 @@ const Navbar = () => {
             <button aria-label="Search" className="navbar__icon-btn">
               <FaSearch />
             </button>
-            <button aria-label="Voice Assistant" className="navbar__icon-btn">
+            <button aria-label="Voice Assistant" className="navbar__icon-btn" onClick={handleSpeakToAI}>
               <FaMicrophone />
             </button>
             <button aria-label="User Profile" className="navbar__icon-btn">

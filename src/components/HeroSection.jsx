@@ -1,25 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { FaPen, FaMicrophone } from 'react-icons/fa';
-import AIVoiceRecorder from './AIVoiceRecorder';
+import { useAIRecorder } from '../App';
 import './HeroSection.scss';
 
 const HeroSection = ({ onShowCustomResult }) => {
-  const [showAIRecorder, setShowAIRecorder] = useState(false);
+  const { openAIRecorder } = useAIRecorder();
 
   const handleSpeakToAI = () => {
-    setShowAIRecorder(true);
-  };
-
-  const handleCloseAIRecorder = () => {
-    setShowAIRecorder(false);
-  };
-
-  const handleAIRecorderComplete = (apiResult) => {
-    // After voice recording is complete, show the custom result page with API data
-    if (onShowCustomResult) {
-      onShowCustomResult(apiResult);
-    }
+    openAIRecorder((apiResult) => {
+      // After voice recording is complete, show the custom result page with API data
+      if (onShowCustomResult) {
+        onShowCustomResult(apiResult);
+      }
+    });
   };
 
   return (
@@ -66,12 +60,6 @@ const HeroSection = ({ onShowCustomResult }) => {
           <div className="hero-guide-line"></div>
         </div>
       </div>
-      
-      <AIVoiceRecorder 
-        isVisible={showAIRecorder} 
-        onClose={handleCloseAIRecorder}
-        onComplete={handleAIRecorderComplete}
-      />
     </section>
   );
 };
