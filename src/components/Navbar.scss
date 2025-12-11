@@ -1,118 +1,247 @@
 .navbar {
-  position: sticky;
-  top: 40px;
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  max-width: 1600px;
-  margin: 0 auto;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18px 48px;
-  border-radius: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  z-index: 200;
+  // Base state: transparent with white text
+  background: transparent;
+  color: #ffffff;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 
-
-  &__logo {
+  &__inner {
+    width: 100%;
+    padding: 8px 0;
     display: flex;
     align-items: center;
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #e02b2b;
-    letter-spacing: 2px;
-    min-width: 90px;
-    flex: 0 0 110px;
-    margin-right: 18px;
+    justify-content: space-between;
+  }
+
+  &__section {
+    display: flex;
+    align-items: center;
+  }
+
+  &__section--left {
+    flex: 0 0 auto;
     justify-content: flex-start;
+  }
+
+  &__section--center {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    text-align: center;
+  }
+
+  &__section--right {
+    flex: 0 0 auto;
+    justify-content: flex-end;
   }
 
   &__brand {
     font-family: 'Montserrat', sans-serif;
     font-weight: 900;
-    font-size: 1.2rem;
-    color: #e02b2b;
-    letter-spacing: 2px;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
     white-space: nowrap;
+    cursor: pointer;
   }
 
-  &__links {
-    display: flex;
-    gap: 24px;
-    list-style: none;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #222;
-    margin: 0;
-    padding: 0;
-    flex: 1 1 0%;
-    justify-content: center;
+  &__menu-toggle {
+    background: none !important;
+    border: none !important;
+    outline: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: inherit !important;
+    display: inline-flex;
     align-items: center;
-    min-width: 0;
-    li {
-      cursor: pointer;
-      transition: color 0.2s;
-      &:hover {
-        color: #e02b2b;
-      }
-    }
+    justify-content: center;
   }
 
   &__icons {
     display: flex;
-    gap: 0px;
+    gap: 6px;
     align-items: center;
-    flex: 0 0 110px;
-    margin-left: 18px;
     justify-content: flex-end;
-    min-width: 110px;
+    padding-right: 0;
+    margin-right: 20px;
   }
 
   &__icon-btn {
-    background: none;
-    border: none;
+    background: none !important;
+    border: none !important;
     outline: none;
     font-size: 1.2rem;
-    color: #222;
+    color: inherit !important;
     cursor: pointer;
-    transition: color 0.2s, transform 0.2s;
-    &:hover, &:focus {
-      color: #e02b2b;
-      transform: scale(1.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    &:hover,
+    &:focus {
+      transform: scale(1.08);
+      opacity: 0.9;
+    }
+  }
+
+  /* Left-side navigation panel */
+  &__panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100vh;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.72);
+    color: #ffffff;
+    backdrop-filter: blur(14px);
+    transition: width 0.25s ease;
+    z-index: 190;
+  }
+
+  &__panel--open {
+    width: 440px;
+  }
+
+  &__panel-inner {
+    height: 100%;
+    padding: 80px 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  &__panel-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  &__panel-tab {
+    border: 1px solid transparent; // prevent layout shift when hover adds border
+    background: transparent;
+    color: inherit;
+    font-size: 0.9rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    opacity: 0.8;
+    outline: none;
+    transition: background-color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+  }
+
+  &__panel-tab--active {
+    background: #ffffff;
+    color: #000000;
+    opacity: 1;
+  }
+
+  /* Hover state: transparent fill with white border, only for non-active tabs */
+  &__panel-tab:not(.navbar__panel-tab--active):hover {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.9);
+    opacity: 1;
+  }
+
+  &__panel-tab:focus,
+  &__panel-tab:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &__panel-links {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  &__panel-link {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    text-align: left;
+    padding: 4px 0;
+    width: 100%;
+  }
+
+  &__panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 180;
+  }
+
+  // Scrolled state: white background with dark text - using new class name
+  &.navbar-scrolled-white {
+    background: #ffffff !important;
+    color: #222222 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    // Override global styles with higher specificity
+    & .navbar__menu-toggle,
+    & .navbar__brand,
+    & .navbar__icon-btn {
+      color: #222222 !important;
+    }
+
+    /* Ensure the dark panel styling stays consistent even when navbar is scrolled */
+    &__panel {
+      background: rgba(0, 0, 0, 0.72) !important;
+      color: #ffffff !important;
+    }
+
+    /* Reinforce panel inner elements to inherit white text explicitly if needed */
+    &__panel-inner,
+    &__panel-tab,
+    &__panel-link {
+      color: inherit !important;
+    }
+
+    /* Ensure active tab stays black text on white bg */
+    &__panel-tab--active {
+      background: #ffffff !important;
+      color: #000000 !important;
+    }
+
+    /* Hover border remains white */
+    &__panel-tab:not(.navbar__panel-tab--active):hover {
+      border-color: rgba(255, 255, 255, 0.9) !important;
     }
   }
 
   @media (max-width: 900px) {
-    padding: 18px 10px;
-    width: 98vw;
-    &__links {
-      gap: 14px;
-      font-size: 1rem;
-      overflow-x: auto;
-      white-space: nowrap;
-      max-width: 70vw;
+    &__inner {
+      padding: 8px 12px;
     }
+
     &__brand {
-      font-size: 1.3rem;
+      font-size: 1rem;
+      letter-spacing: 1.5px;
+    }
+
+    &__icon-btn {
+      font-size: 1.05rem;
+    }
+
+    &__icons {
+      gap: 4px;
     }
   }
 
   @media (max-width: 600px) {
-    flex-direction: column;
-    align-items: stretch;
-    padding: 10px 2vw;
-    width: 99vw;
-    &__links {
-      flex-wrap: wrap;
-      gap: 7px;
-      justify-content: center;
-      overflow-x: auto;
-      max-width: 90vw;
-    }
-    &__icons {
-      justify-content: center;
-      gap: 10px;
+    &__inner {
+      padding: 8px 8px;
     }
   }
 }
-

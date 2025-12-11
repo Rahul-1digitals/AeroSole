@@ -6,6 +6,7 @@ import CarouselSection from './components/CarouselSection';
 import CustomShoeResult from './components/CustomShoeResult';
 import ShoeDesignPage from './components/ShoeDesignPage';
 import ProductDetailPage from './components/ProductDetailPage';
+import ShowcaseSlider from './components/ShowcaseSlider';
 import './App.scss';
 
 // Home Page Component
@@ -42,8 +43,10 @@ function HomePage() {
       <div className="global-hero-overlay" />
       <div className="global-content">
         <Navbar />
+        <ShowcaseSlider />
         <HeroSection onShowCustomResult={handleShowCustomResult} />
         <CarouselSection />
+        <div className="scroll-spacer" />
       </div>
     </>
   );
