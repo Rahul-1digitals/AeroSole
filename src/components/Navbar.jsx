@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaSearch, FaUser, FaShoppingBag, FaMicrophone, FaBars, FaTimes } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAIRecorder } from '../App';
 import './Navbar.scss';
 
@@ -34,10 +34,13 @@ const NAV_PANEL_SECTIONS = {
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { openAIRecorder } = useAIRecorder();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCategory, setActiveCategory] = useState('New & Featured');
+
+  const isHomePage = location.pathname === '/';
 
   const handleLogoClick = () => {
     navigate('/');
@@ -71,7 +74,7 @@ const Navbar = () => {
     };
   }, []);
 
-  const navbarClassName = `navbar${isScrolled ? ' navbar-scrolled-white' : ''}`;
+  const navbarClassName = `navbar${isScrolled && isHomePage ? ' navbar-scrolled-white' : ''}${!isHomePage ? ' navbar--glassy' : ''}${!isHomePage && isScrolled ? ' navbar--scrolled-overlay' : ''}`;
 
   return (
     <nav className={navbarClassName}>
@@ -126,6 +129,16 @@ const Navbar = () => {
       {/* Left-side panel navigation */}
       <div className={`navbar__panel ${isMenuOpen ? 'navbar__panel--open' : ''}`}>
         <div className="navbar__panel-inner">
+          {/* Close button at top */}
+          <button 
+            type="button"
+            className="navbar__panel-close"
+            onClick={() => setIsMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <FaTimes />
+          </button>
+          
           <div className="navbar__panel-tabs">
             {Object.keys(NAV_PANEL_SECTIONS).map((key) => (
               <button

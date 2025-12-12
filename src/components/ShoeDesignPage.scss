@@ -6,14 +6,14 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  overflow: hidden; // Prevent scrolling
+  overflow-y: auto; // Changed from hidden to auto to allow scrolling
 }
 
 .design-main-content {
   flex: 1;
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 24px 24px; // Reverted to original padding
+  margin: 18px auto 0 auto; // Added top margin for gap below navbar
+  padding: 20px 24px 24px; // Removed top padding, keeping side and bottom padding
   position: relative;
   width: 100%;
   display: flex;

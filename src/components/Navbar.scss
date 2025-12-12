@@ -204,11 +204,68 @@
     }
   }
 
+  &__panel-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 201;
+    transition: color 0.2s ease, transform 0.2s ease;
+    
+    &:hover {
+      color: #e02b2b;
+      transform: scale(1.1);
+    }
+  }
+
   &__panel-backdrop {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 180;
+  }
+
+  // Glassy black style for other pages
+  &--glassy {
+    position: relative;
+    transition: position 0.3s ease, background 0.3s ease; // Smooth transition
+
+    // Overlay state when scrolled
+    &.navbar--scrolled-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 200;
+    }
+    background: rgba(119, 2, 2, 0.827) !important;        // deep red-black tint
+    backdrop-filter: blur(18px) saturate(220%);         // crisp glass
+    -webkit-backdrop-filter: blur(18px) saturate(220%);
+    border-bottom: 1px solid rgba(255, 60, 60, 0.22);   // glossy red highlight
+    color: #ffffff !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);         // deep clean shadow
+    // Ensure all text and icons are white
+    & .navbar__menu-toggle,
+    & .navbar__brand,
+    & .navbar__icon-btn {
+      color: #ffffff !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); // Enhanced text shadow for better visibility
+    }
+
+    /* Panel remains untouched - keep original styling */
+    &__panel {
+      background: rgba(0, 0, 0, 0.72);
+      color: #ffffff;
+    }
+
+    &__panel-tab--active {
+      background: #ffffff;
+      color: #000000;
+    }
   }
 
   // Scrolled state: white background with dark text - using new class name

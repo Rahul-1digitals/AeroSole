@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Navbar from './Navbar';
 import LoadingSpinner from './LoadingSpinner';
 import { FaFilter, FaPalette, FaGem, FaRedo, FaUpload, FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa';
 import { FaInstagram, FaFacebook, FaTwitter, FaYoutube } from 'react-icons/fa';
@@ -466,6 +467,9 @@ const ShoeDesignPage = () => {
 
   return (
     <div className="shoe-design-page">
+      {/* Header Navigation */}
+      <Navbar />
+      
       {/* Main Content */}
       <div className="design-main-content">
         {/* Style Selector */}

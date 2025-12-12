@@ -8,7 +8,7 @@
   background: #f5f5f5;
   z-index: 1000;
   display: grid;
-  grid-template-rows: auto 1fr auto auto; // title, main, transcript, footer (no navbar)
+  grid-template-rows: auto auto 1fr auto auto; // navbar, title, main, transcript, footer
   opacity: 0;
   transition: opacity 0.5s ease-in-out;
   overflow-y: auto;
@@ -27,7 +27,8 @@
 .page-title {
   position: relative;
   text-align: center;
-  padding: 16px 0 12px;
+  padding: 16px 0 12px; // Removed extra padding since navbar is now in normal flow
+  margin-top: 20px; // Additional space to prevent overlap
   background: #f5f5f5;
 
   h1 {
@@ -40,8 +41,8 @@
 
   .close-btn {
     position: absolute;
-    top: 24px;
-    right: 32px;
+    top: 60px; // Moved down to avoid navbar overlap
+    right: 75px;
     background: none;
     border: none;
     font-size: 24px;
